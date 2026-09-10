@@ -350,6 +350,77 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  bool _hasNotificationToday(NotificationType type) {
+    final today = TimeUtils.dayStart(DateTime.now());
+    return _notifications.any(
+      (n) => n.type == type && !n.time.isBefore(today),
+    );
+  }
+
+  Future<void> syncReminders({
+    required bool reminders,
+    required bool deadlines,
+    required bool weekly,
+  }) async {
+    final user = _user;
+    if (user == null) return;
+    final now = DateTime.now();
+    final nowMinutes = now.hour * 60 + now.minute;
+    final today = todayTasks;
+    final pending = today.where((t) => !t.isDone).toList();
+
+    if (reminders && !_hasNotificationToday(NotificationType.reminder)) {
+      final next = scheduleFor(now)
+          .where((s) =>
+              s.type == SlotType.study &&
+              TimeUtils.toMinutes(s.startTime) - nowMinutes > 0 &&
+              TimeUtils.toMinutes(s.startTime) - nowMinutes <= 60)
+          .firstOrNull;
+      if (next != null) {
+        final left = TimeUtils.toMinutes(next.startTime) - nowMinutes;
+        await pushNotification(
+          type: NotificationType.reminder,
+          title: _l.t('Дайындық жақындады', 'Скоро занятие'),
+          body: _l.t(
+            '${next.startTime}-де «${next.title}» басталады. $left минут қалды.',
+            'В ${next.startTime} начинается «${next.title}». Осталось $left мин.',
+          ),
+        );
+      }
+    }
+
+    if (deadlines &&
+        pending.isNotEmpty &&
+        nowMinutes >= 20 * 60 &&
+        !_hasNotificationToday(NotificationType.deadline)) {
+      await pushNotification(
+        type: NotificationType.deadline,
+        title: _l.t('Дедлайн жақын', 'Дедлайн близко'),
+        body: _l.t(
+          'Бүгін ${pending.length} тапсырма орындалмай тұр. Кеш бітпей үлгер.',
+          'Сегодня не закрыто заданий: ${pending.length}. Успей до конца дня.',
+        ),
+      );
+    }
+
+    if (weekly &&
+        now.weekday == DateTime.sunday &&
+        nowMinutes >= 18 * 60 &&
+        !_hasNotificationToday(NotificationType.weekly)) {
+      final current = stats;
+      final weekTotal =
+          current.weeklyCompleted.fold<int>(0, (sum, value) => sum + value);
+      await pushNotification(
+        type: NotificationType.weekly,
+        title: _l.t('Апталық нәтиже', 'Итоги недели'),
+        body: _l.t(
+          'Осы аптада $weekTotal тапсырма орындалды. Серия: ${current.streakDays} күн.',
+          'За неделю выполнено заданий: $weekTotal. Серия: ${current.streakDays} дн.',
+        ),
+      );
+    }
+  }
+
   Future<void> markNotificationsRead() async {
     final user = _user;
     if (user == null) return;

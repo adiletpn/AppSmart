@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/app_colors.dart';
 import '../../core/l10n.dart';
 import '../../state/app_state.dart';
+import '../../state/settings_state.dart';
 import '../chat/chat_screen.dart';
 import '../profile/profile_screen.dart';
 import '../progress/progress_screen.dart';
@@ -28,8 +29,15 @@ class _HomeShellState extends State<HomeShell> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final app = context.read<AppState>();
-      app.generatePlan(DateTime.now());
-      app.refreshAdvice();
+      final settings = context.read<SettingsState>();
+      app.generatePlan(DateTime.now()).then((_) {
+        app.refreshAdvice();
+        app.syncReminders(
+          reminders: settings.remindersEnabled,
+          deadlines: settings.deadlineAlerts,
+          weekly: settings.weeklyReport,
+        );
+      });
     });
   }
 
