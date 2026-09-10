@@ -13,6 +13,7 @@ import '../../widgets/gradient_card.dart';
 import '../../widgets/primary_field.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/time_picker_tile.dart';
+import 'week_overview.dart';
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
@@ -282,6 +283,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   ),
                 ],
               ),
+            ),
+            const SizedBox(height: 20),
+            WeekOverview(
+              anchor: _selected,
+              onSelectDay: (day) => setState(() => _selected = day),
             ),
             const SizedBox(height: 20),
             const AiBusyBanner(),
