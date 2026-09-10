@@ -191,7 +191,7 @@ class AppState extends ChangeNotifier {
         date: day,
         freeMinutes: freeMinutesFor(day),
         studyMinutes:
-            tasks.fold<int>(0, (sum, task) => sum + task.durationMinutes),
+            tasks.fold<int>(0, (total, task) => total + task.durationMinutes),
         totalTasks: tasks.length,
         doneTasks: tasks.where((task) => task.isDone).length,
       );
