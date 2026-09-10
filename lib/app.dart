@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'core/app_theme.dart';
 import 'core/l10n.dart';
+import 'data/ai/gemini_mentor_ai.dart';
 import 'data/ai/local_mentor_ai.dart';
 import 'features/splash/splash_screen.dart';
 import 'state/app_state.dart';
@@ -15,7 +16,9 @@ class SmartMentorApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final settings = context.watch<SettingsState>();
     context.read<AppState>().configure(
-          ai: const LocalMentorAi(),
+          ai: settings.aiConnected
+              ? GeminiMentorAi(apiKey: settings.apiKey)
+              : const LocalMentorAi(),
           isKz: settings.lang == AppLang.kk,
         );
 

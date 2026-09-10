@@ -7,6 +7,7 @@ import '../../state/app_state.dart';
 import '../../state/settings_state.dart';
 import '../../widgets/gradient_card.dart';
 import '../../widgets/lang_switch.dart';
+import '../../widgets/primary_field.dart';
 import '../../widgets/section_header.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -113,6 +114,13 @@ class SettingsScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
+            SectionHeader(
+              title: l.t('AI ментор', 'AI-ментор'),
+              subtitle: l.t('Gemini кілтін қоссаң, чат нақты AI-мен жауап береді',
+                  'С ключом Gemini чат отвечает через настоящий AI'),
+            ),
+            const _ApiKeyCard(),
+            const SizedBox(height: 24),
             SectionHeader(title: l.t('Деректер', 'Данные')),
             SurfaceCard(
               onTap: () async {
@@ -192,6 +200,132 @@ class SettingsScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ApiKeyCard extends StatefulWidget {
+  const _ApiKeyCard();
+
+  @override
+  State<_ApiKeyCard> createState() => _ApiKeyCardState();
+}
+
+class _ApiKeyCardState extends State<_ApiKeyCard> {
+  late final TextEditingController _controller =
+      TextEditingController(text: context.read<SettingsState>().apiKey);
+  bool _obscure = true;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l;
+    final settings = context.watch<SettingsState>();
+
+    return SurfaceCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(
+                settings.aiConnected ? Icons.cloud_done : Icons.cloud_off,
+                size: 20,
+                color: settings.aiConnected
+                    ? AppColors.success
+                    : Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.45),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  settings.aiConnected
+                      ? l.t('AI қосылған', 'AI подключён')
+                      : l.t('Кіріктірілген алгоритм жұмыс істеп тұр',
+                          'Работает встроенный алгоритм'),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          PrimaryField(
+            controller: _controller,
+            hint: 'AIza...',
+            icon: Icons.key_outlined,
+            obscure: _obscure,
+            suffix: IconButton(
+              onPressed: () => setState(() => _obscure = !_obscure),
+              icon: Icon(
+                _obscure ? Icons.visibility_off : Icons.visibility,
+                size: 20,
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            l.t(
+              'Кілтті aistudio.google.com сайтынан тегін алуға болады.',
+              'Ключ бесплатно берётся на aistudio.google.com.',
+            ),
+            style: TextStyle(
+              fontSize: 12,
+              height: 1.4,
+              color:
+                  Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton(
+                  onPressed: () async {
+                    await context
+                        .read<SettingsState>()
+                        .setApiKey(_controller.text);
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(l.t('Сақталды', 'Сохранено')),
+                      ),
+                    );
+                  },
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(46),
+                  ),
+                  child: Text(l.t('Сақтау', 'Сохранить')),
+                ),
+              ),
+              if (settings.aiConnected) ...[
+                const SizedBox(width: 10),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () {
+                      _controller.clear();
+                      context.read<SettingsState>().setApiKey('');
+                    },
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(46),
+                    ),
+                    child: Text(l.t('Өшіру', 'Убрать')),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
       ),
     );
   }

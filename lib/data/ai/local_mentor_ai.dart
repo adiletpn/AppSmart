@@ -42,7 +42,7 @@ class LocalMentorAi implements MentorAi {
       isKz: isKz,
     );
 
-    final schedule = _buildSchedule(
+    final schedule = buildSchedule(
       user: user,
       date: date,
       tasks: tasks,
@@ -252,7 +252,7 @@ class LocalMentorAi implements MentorAi {
     };
   }
 
-  List<ScheduleItem> _buildSchedule({
+  List<ScheduleItem> buildSchedule({
     required AppUser user,
     required DateTime date,
     required List<StudyTask> tasks,
