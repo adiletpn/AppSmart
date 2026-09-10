@@ -15,25 +15,56 @@ import 'local_mentor_ai.dart';
 import 'mentor_ai.dart';
 import 'topic_catalog.dart';
 
+class _ModelOption {
+  const _ModelOption(this.name, this.disableThinking);
+
+  final String name;
+  final bool disableThinking;
+}
+
 class GeminiMentorAi implements MentorAi {
-  GeminiMentorAi({required this.apiKey, this.model = 'gemini-2.0-flash'});
+  GeminiMentorAi({required this.apiKey});
 
   final String apiKey;
-  final String model;
+
+  static const _models = [
+    _ModelOption('gemini-2.5-flash', true),
+    _ModelOption('gemini-3.6-flash', false),
+    _ModelOption('gemini-flash-latest', false),
+  ];
 
   static const _fallback = LocalMentorAi();
   static const _uuid = Uuid();
+  static int _preferred = 0;
 
-  Uri get _endpoint => Uri.parse(
+  Uri _endpoint(String model) => Uri.parse(
         'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey',
       );
 
-  Future<String?> _ask(String system, String prompt, {int maxTokens = 700}) async {
+  Future<String?> _ask(String system, String prompt,
+      {int maxTokens = 1200}) async {
     if (apiKey.trim().isEmpty) return null;
+    for (var attempt = 0; attempt < _models.length; attempt++) {
+      final index = (_preferred + attempt) % _models.length;
+      final text = await _request(_models[index], system, prompt, maxTokens);
+      if (text != null) {
+        _preferred = index;
+        return text;
+      }
+    }
+    return null;
+  }
+
+  Future<String?> _request(
+    _ModelOption option,
+    String system,
+    String prompt,
+    int maxTokens,
+  ) async {
     try {
       final response = await http
           .post(
-            _endpoint,
+            _endpoint(option.name),
             headers: const {'Content-Type': 'application/json'},
             body: jsonEncode({
               'systemInstruction': {
@@ -52,18 +83,28 @@ class GeminiMentorAi implements MentorAi {
               'generationConfig': {
                 'temperature': 0.7,
                 'maxOutputTokens': maxTokens,
+                if (option.disableThinking)
+                  'thinkingConfig': {'thinkingBudget': 0},
               },
             }),
           )
-          .timeout(const Duration(seconds: 25));
+          .timeout(const Duration(seconds: 30));
       if (response.statusCode != 200) return null;
       final decoded = jsonDecode(utf8.decode(response.bodyBytes));
       final candidates = decoded['candidates'];
       if (candidates is! List || candidates.isEmpty) return null;
       final parts = candidates.first['content']?['parts'];
-      if (parts is! List || parts.isEmpty) return null;
-      final text = parts.first['text'];
-      return text is String && text.trim().isNotEmpty ? text.trim() : null;
+      if (parts is! List) return null;
+
+      final buffer = StringBuffer();
+      for (final part in parts) {
+        if (part is! Map) continue;
+        if (part['thought'] == true) continue;
+        final text = part['text'];
+        if (text is String) buffer.write(text);
+      }
+      final result = buffer.toString().trim();
+      return result.isEmpty ? null : result;
     } on Exception {
       return null;
     }
@@ -220,7 +261,7 @@ ${_profile(user, stats, isKz)}
       'Сен оқушыны қолдайтын ментор боласың. Тек 2 сөйлем жаз.',
       '${_profile(user, stats, isKz)}\nБүгінгі тапсырмалар: ${titles.isEmpty ? 'жоқ' : titles}.\n'
       'Оқушыға бүгінге қысқа әрі нақты кеңес бер.',
-      maxTokens: 200,
+      maxTokens: 400,
     );
     if (answer != null) return answer;
     return _fallback.advice(
