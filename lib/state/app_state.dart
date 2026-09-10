@@ -68,8 +68,16 @@ class AppState extends ChangeNotifier {
   int get unreadCount => _notifications.where((n) => !n.read).length;
 
   void configure({required MentorAi ai, required bool isKz}) {
+    final languageChanged = _isKz != isKz;
     _ai = ai;
     _isKz = isKz;
+    if (!languageChanged) return;
+    final user = _user;
+    if (user == null || !user.profileCompleted) return;
+    scheduleMicrotask(() async {
+      await generatePlan(DateTime.now(), force: true);
+      await refreshAdvice();
+    });
   }
 
   L10n get _l => L10n(_isKz ? AppLang.kk : AppLang.ru);
