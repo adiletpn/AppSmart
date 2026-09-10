@@ -1,16 +1,20 @@
-import '../local/local_store.dart';
 import '../models/study_task.dart';
+import '../remote/firestore_service.dart';
 
 class TaskRepository {
-  TaskRepository(this._store);
+  const TaskRepository();
 
-  final LocalStore _store;
+  static const _name = 'tasks';
 
-  String _key(String userId) => 'tasks_$userId';
-
-  List<StudyTask> all(String userId) =>
-      _store.readList(_key(userId)).map(StudyTask.fromJson).toList();
+  Future<List<StudyTask>> all(String userId) async {
+    final items = await FirestoreService.readAll(userId, _name);
+    return items.map(StudyTask.fromJson).toList();
+  }
 
   Future<void> saveAll(String userId, List<StudyTask> tasks) =>
-      _store.writeList(_key(userId), tasks.map((e) => e.toJson()).toList());
+      FirestoreService.replaceAll(
+        userId,
+        _name,
+        tasks.map((e) => e.toJson()).toList(),
+      );
 }

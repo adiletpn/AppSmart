@@ -1,16 +1,22 @@
-import '../local/local_store.dart';
 import '../models/chat_message.dart';
+import '../remote/firestore_service.dart';
 
 class ChatRepository {
-  ChatRepository(this._store);
+  const ChatRepository();
 
-  final LocalStore _store;
+  static const _name = 'chat';
 
-  String _key(String userId) => 'chat_$userId';
-
-  List<ChatMessage> all(String userId) =>
-      _store.readList(_key(userId)).map(ChatMessage.fromJson).toList();
+  Future<List<ChatMessage>> all(String userId) async {
+    final items = await FirestoreService.readAll(userId, _name);
+    final messages = items.map(ChatMessage.fromJson).toList()
+      ..sort((a, b) => a.time.compareTo(b.time));
+    return messages;
+  }
 
   Future<void> saveAll(String userId, List<ChatMessage> messages) =>
-      _store.writeList(_key(userId), messages.map((e) => e.toJson()).toList());
+      FirestoreService.replaceAll(
+        userId,
+        _name,
+        messages.map((e) => e.toJson()).toList(),
+      );
 }

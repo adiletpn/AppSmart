@@ -1,16 +1,20 @@
-import '../local/local_store.dart';
 import '../models/test_result.dart';
+import '../remote/firestore_service.dart';
 
 class ProgressRepository {
-  ProgressRepository(this._store);
+  const ProgressRepository();
 
-  final LocalStore _store;
+  static const _name = 'tests';
 
-  String _key(String userId) => 'tests_$userId';
-
-  List<TestResult> all(String userId) =>
-      _store.readList(_key(userId)).map(TestResult.fromJson).toList();
+  Future<List<TestResult>> all(String userId) async {
+    final items = await FirestoreService.readAll(userId, _name);
+    return items.map(TestResult.fromJson).toList();
+  }
 
   Future<void> saveAll(String userId, List<TestResult> results) =>
-      _store.writeList(_key(userId), results.map((e) => e.toJson()).toList());
+      FirestoreService.replaceAll(
+        userId,
+        _name,
+        results.map((e) => e.toJson()).toList(),
+      );
 }

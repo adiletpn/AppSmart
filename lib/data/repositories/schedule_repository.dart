@@ -1,16 +1,20 @@
-import '../local/local_store.dart';
 import '../models/schedule_item.dart';
+import '../remote/firestore_service.dart';
 
 class ScheduleRepository {
-  ScheduleRepository(this._store);
+  const ScheduleRepository();
 
-  final LocalStore _store;
+  static const _name = 'schedule';
 
-  String _key(String userId) => 'schedule_$userId';
-
-  List<ScheduleItem> all(String userId) =>
-      _store.readList(_key(userId)).map(ScheduleItem.fromJson).toList();
+  Future<List<ScheduleItem>> all(String userId) async {
+    final items = await FirestoreService.readAll(userId, _name);
+    return items.map(ScheduleItem.fromJson).toList();
+  }
 
   Future<void> saveAll(String userId, List<ScheduleItem> items) =>
-      _store.writeList(_key(userId), items.map((e) => e.toJson()).toList());
+      FirestoreService.replaceAll(
+        userId,
+        _name,
+        items.map((e) => e.toJson()).toList(),
+      );
 }

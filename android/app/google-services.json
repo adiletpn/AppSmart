@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1009046445553",
+    "project_id": "smartmentor-26ab4",
+    "storage_bucket": "smartmentor-26ab4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1009046445553:android:2ad89b266acc673c9cf850",
+        "android_client_info": {
+          "package_name": "com.smartmentor.smart_mentor"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCbjnMbsjzJQpiIrflhxlVoDulDW8bSdaY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,7 +1,7 @@
-import 'dart:convert';
-import 'package:uuid/uuid.dart';
-import '../local/local_store.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 import '../models/app_user.dart';
+import '../remote/firestore_service.dart';
 
 class AuthException implements Exception {
   AuthException(this.messageKz, this.messageRu);
@@ -10,32 +10,29 @@ class AuthException implements Exception {
 }
 
 class AuthRepository {
-  AuthRepository(this._store);
+  const AuthRepository();
 
-  final LocalStore _store;
-  static const _usersKey = 'users';
-  static const _credsKey = 'credentials';
-  static const _sessionKey = 'session_user_id';
-  static const _uuid = Uuid();
+  FirebaseAuth get _auth => FirebaseAuth.instance;
 
-  String _hash(String password) =>
-      base64Encode(utf8.encode('smart_mentor::$password'));
+  Future<AppUser?> currentUser() async {
+    final account = _auth.currentUser;
+    if (account == null) return null;
+    return _profileOf(account);
+  }
 
-  List<AppUser> _users() =>
-      _store.readList(_usersKey).map(AppUser.fromJson).toList();
+  Future<AppUser> _profileOf(User account) async {
+    final snapshot = await FirestoreService.user(account.uid).get();
+    final data = snapshot.data();
+    if (data != null) return AppUser.fromJson(data);
 
-  Future<void> _saveUsers(List<AppUser> users) =>
-      _store.writeList(_usersKey, users.map((e) => e.toJson()).toList());
-
-  Map<String, dynamic> _credentials() => _store.readMap(_credsKey) ?? {};
-
-  AppUser? currentUser() {
-    final id = _store.readString(_sessionKey);
-    if (id == null) return null;
-    for (final user in _users()) {
-      if (user.id == id) return user;
-    }
-    return null;
+    final created = AppUser(
+      id: account.uid,
+      name: account.displayName ?? '',
+      email: account.email ?? '',
+      createdAt: DateTime.now(),
+    );
+    await FirestoreService.user(created.id).set(created.toJson());
+    return created;
   }
 
   Future<AppUser> register({
@@ -43,69 +40,89 @@ class AuthRepository {
     required String email,
     required String password,
   }) async {
-    final normalized = email.trim().toLowerCase();
-    final users = _users();
-    if (users.any((u) => u.email.toLowerCase() == normalized)) {
-      throw AuthException(
-        'Бұл email тіркелген',
-        'Этот email уже зарегистрирован',
+    try {
+      final credential = await _auth.createUserWithEmailAndPassword(
+        email: email.trim().toLowerCase(),
+        password: password,
       );
+      final account = credential.user!;
+      await account.updateDisplayName(name.trim());
+      final user = AppUser(
+        id: account.uid,
+        name: name.trim(),
+        email: account.email ?? email.trim().toLowerCase(),
+        createdAt: DateTime.now(),
+      );
+      await FirestoreService.user(user.id).set(user.toJson());
+      return user;
+    } on FirebaseAuthException catch (error) {
+      throw _mapError(error);
     }
-    final user = AppUser(
-      id: _uuid.v4(),
-      name: name.trim(),
-      email: normalized,
-      createdAt: DateTime.now(),
-    );
-    users.add(user);
-    await _saveUsers(users);
-    final creds = _credentials()..[normalized] = _hash(password);
-    await _store.writeMap(_credsKey, creds);
-    await _store.writeString(_sessionKey, user.id);
-    return user;
   }
 
   Future<AppUser> login({
     required String email,
     required String password,
   }) async {
-    final normalized = email.trim().toLowerCase();
-    final creds = _credentials();
-    if (creds[normalized] != _hash(password)) {
-      throw AuthException(
-        'Email немесе құпиясөз қате',
-        'Неверный email или пароль',
+    try {
+      final credential = await _auth.signInWithEmailAndPassword(
+        email: email.trim().toLowerCase(),
+        password: password,
       );
+      return _profileOf(credential.user!);
+    } on FirebaseAuthException catch (error) {
+      throw _mapError(error);
     }
-    final user = _users().firstWhere((u) => u.email.toLowerCase() == normalized);
-    await _store.writeString(_sessionKey, user.id);
-    return user;
   }
 
-  Future<void> resetPassword({
-    required String email,
-    required String password,
-  }) async {
-    final normalized = email.trim().toLowerCase();
-    final creds = _credentials();
-    if (!creds.containsKey(normalized)) {
-      throw AuthException('Мұндай email табылмады', 'Такой email не найден');
+  Future<void> sendPasswordReset(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email.trim().toLowerCase());
+    } on FirebaseAuthException catch (error) {
+      throw _mapError(error);
     }
-    creds[normalized] = _hash(password);
-    await _store.writeMap(_credsKey, creds);
   }
 
-  Future<void> logout() => _store.remove(_sessionKey);
+  Future<void> logout() => _auth.signOut();
 
   Future<AppUser> save(AppUser user) async {
-    final users = _users();
-    final index = users.indexWhere((u) => u.id == user.id);
-    if (index == -1) {
-      users.add(user);
-    } else {
-      users[index] = user;
-    }
-    await _saveUsers(users);
+    await FirestoreService.user(user.id).set(user.toJson());
     return user;
   }
+
+  AuthException _mapError(FirebaseAuthException error) => switch (error.code) {
+        'email-already-in-use' => AuthException(
+            'Бұл email тіркелген',
+            'Этот email уже зарегистрирован',
+          ),
+        'invalid-email' => AuthException(
+            'Email форматы қате',
+            'Неверный формат email',
+          ),
+        'weak-password' => AuthException(
+            'Құпиясөз тым қарапайым',
+            'Слишком простой пароль',
+          ),
+        'user-not-found' || 'wrong-password' || 'invalid-credential' =>
+          AuthException(
+            'Email немесе құпиясөз қате',
+            'Неверный email или пароль',
+          ),
+        'user-disabled' => AuthException(
+            'Бұл аккаунт бұғатталған',
+            'Этот аккаунт заблокирован',
+          ),
+        'too-many-requests' => AuthException(
+            'Тым көп әрекет. Сәл кейінірек көр',
+            'Слишком много попыток. Попробуй позже',
+          ),
+        'network-request-failed' => AuthException(
+            'Интернет байланысы жоқ',
+            'Нет соединения с интернетом',
+          ),
+        _ => AuthException(
+            'Қате: ${error.code}',
+            'Ошибка: ${error.code}',
+          ),
+      };
 }

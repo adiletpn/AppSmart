@@ -1,16 +1,22 @@
-import '../local/local_store.dart';
 import '../models/app_notification.dart';
+import '../remote/firestore_service.dart';
 
 class NotificationRepository {
-  NotificationRepository(this._store);
+  const NotificationRepository();
 
-  final LocalStore _store;
+  static const _name = 'notifications';
 
-  String _key(String userId) => 'notifications_$userId';
-
-  List<AppNotification> all(String userId) =>
-      _store.readList(_key(userId)).map(AppNotification.fromJson).toList();
+  Future<List<AppNotification>> all(String userId) async {
+    final items = await FirestoreService.readAll(userId, _name);
+    final list = items.map(AppNotification.fromJson).toList()
+      ..sort((a, b) => b.time.compareTo(a.time));
+    return list;
+  }
 
   Future<void> saveAll(String userId, List<AppNotification> items) =>
-      _store.writeList(_key(userId), items.map((e) => e.toJson()).toList());
+      FirestoreService.replaceAll(
+        userId,
+        _name,
+        items.map((e) => e.toJson()).toList(),
+      );
 }

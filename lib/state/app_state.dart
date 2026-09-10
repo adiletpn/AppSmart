@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
@@ -6,7 +9,6 @@ import '../core/time_utils.dart';
 import '../data/ai/free_time_engine.dart';
 import '../data/ai/local_mentor_ai.dart';
 import '../data/ai/mentor_ai.dart';
-import '../data/local/local_store.dart';
 import '../data/models/app_notification.dart';
 import '../data/models/app_user.dart';
 import '../data/models/chat_message.dart';
@@ -20,20 +22,20 @@ import '../data/repositories/notification_repository.dart';
 import '../data/repositories/progress_repository.dart';
 import '../data/repositories/schedule_repository.dart';
 import '../data/repositories/task_repository.dart';
+import '../data/remote/firestore_service.dart';
+import '../services/fcm_service.dart';
 import '../services/push_service.dart';
 
 class AppState extends ChangeNotifier {
   AppState({
-    required LocalStore store,
     required this.auth,
     required this.tasksRepo,
     required this.scheduleRepo,
     required this.progressRepo,
     required this.chatRepo,
     required this.notificationsRepo,
-  }) : _store = store;
+  });
 
-  final LocalStore _store;
   final AuthRepository auth;
   final TaskRepository tasksRepo;
   final ScheduleRepository scheduleRepo;
@@ -73,19 +75,29 @@ class AppState extends ChangeNotifier {
   L10n get _l => L10n(_isKz ? AppLang.kk : AppLang.ru);
 
   Future<void> bootstrap() async {
-    _user = auth.currentUser();
+    _user = await auth.currentUser();
     if (_user != null) await _loadUserData();
     notifyListeners();
   }
 
   Future<void> _loadUserData() async {
     final id = _user!.id;
-    _tasks = tasksRepo.all(id);
-    _schedule = scheduleRepo.all(id);
-    _tests = progressRepo.all(id);
-    _messages = chatRepo.all(id);
-    _notifications = notificationsRepo.all(id);
+    _tasks = await tasksRepo.all(id);
+    _schedule = await scheduleRepo.all(id);
+    _tests = await progressRepo.all(id);
+    _messages = await chatRepo.all(id);
+    _notifications = await notificationsRepo.all(id);
     _syncMissedTasks();
+    unawaited(_registerPushToken(id));
+  }
+
+  Future<void> _registerPushToken(String userId) async {
+    final token = await FcmService.setup();
+    if (token == null) return;
+    await FirestoreService.user(userId).set(
+      {'fcmToken': token, 'fcmUpdatedAt': DateTime.now().toIso8601String()},
+      SetOptions(merge: true),
+    );
   }
 
   void _syncMissedTasks() {
@@ -122,8 +134,7 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  Future<void> resetPassword(String email, String password) =>
-      auth.resetPassword(email: email, password: password);
+  Future<void> resetPassword(String email) => auth.sendPasswordReset(email);
 
   Future<void> logout() async {
     await auth.logout();
@@ -448,7 +459,7 @@ class AppState extends ChangeNotifier {
         !_hasNotificationToday(NotificationType.weekly)) {
       final current = stats;
       final weekTotal =
-          current.weeklyCompleted.fold<int>(0, (sum, value) => sum + value);
+          current.weeklyCompleted.fold<int>(0, (total, value) => total + value);
       await pushNotification(
         type: NotificationType.weekly,
         title: _l.t('Апталық нәтиже', 'Итоги недели'),
@@ -480,7 +491,7 @@ class AppState extends ChangeNotifier {
   ProgressStats get stats {
     final done = _tasks.where((t) => t.isDone).toList();
     final studyMinutes =
-        done.fold<int>(0, (sum, t) => sum + t.durationMinutes);
+        done.fold<int>(0, (total, t) => total + t.durationMinutes);
     final days = done.map((t) => TimeUtils.dateKey(t.date)).toSet();
 
     var streak = 0;
@@ -545,7 +556,9 @@ class AppState extends ChangeNotifier {
   Future<void> wipeData() async {
     final user = _user;
     if (user == null) return;
-    await _store.clearUserData(user.id);
+    for (final name in ['tasks', 'schedule', 'tests', 'chat', 'notifications']) {
+      await FirestoreService.deleteAll(user.id, name);
+    }
     _tasks = [];
     _schedule = [];
     _tests = [];
