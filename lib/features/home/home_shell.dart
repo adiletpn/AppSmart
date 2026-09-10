@@ -37,6 +37,10 @@ class _HomeShellState extends State<HomeShell> {
           deadlines: settings.deadlineAlerts,
           weekly: settings.weeklyReport,
         );
+        app.scheduleDeviceNotifications(
+          reminders: settings.remindersEnabled,
+          deadlines: settings.deadlineAlerts,
+        );
       });
     });
   }

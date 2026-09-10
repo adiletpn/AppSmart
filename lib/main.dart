@@ -10,11 +10,13 @@ import 'data/repositories/progress_repository.dart';
 import 'data/repositories/schedule_repository.dart';
 import 'data/repositories/task_repository.dart';
 import 'state/app_state.dart';
+import 'services/push_service.dart';
 import 'state/settings_state.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final store = await LocalStore.create();
+  await PushService.init();
 
   runApp(
     MultiProvider(

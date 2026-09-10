@@ -20,6 +20,7 @@ import '../data/repositories/notification_repository.dart';
 import '../data/repositories/progress_repository.dart';
 import '../data/repositories/schedule_repository.dart';
 import '../data/repositories/task_repository.dart';
+import '../services/push_service.dart';
 
 class AppState extends ChangeNotifier {
   AppState({
@@ -348,6 +349,44 @@ class AppState extends ChangeNotifier {
     }
     await notificationsRepo.saveAll(user.id, _notifications);
     notifyListeners();
+  }
+
+  Future<void> scheduleDeviceNotifications({
+    required bool reminders,
+    required bool deadlines,
+  }) async {
+    final user = _user;
+    if (user == null || !PushService.supported) return;
+    await PushService.cancelAll();
+
+    final day = TimeUtils.dayStart(DateTime.now());
+    if (reminders) {
+      for (final slot in scheduleFor(day).where((s) => s.type == SlotType.study)) {
+        final minutes = TimeUtils.toMinutes(slot.startTime) - 10;
+        if (minutes < 0) continue;
+        await PushService.schedule(
+          key: slot.id,
+          title: _l.t('Дайындық басталады', 'Скоро занятие'),
+          body: _l.t(
+            '${slot.startTime}-де «${slot.title}». Дайындал!',
+            'В ${slot.startTime} — «${slot.title}». Готовься!',
+          ),
+          when: day.add(Duration(minutes: minutes)),
+        );
+      }
+    }
+
+    if (deadlines && tasksFor(day).any((t) => !t.isDone)) {
+      await PushService.schedule(
+        key: 'deadline_${TimeUtils.dateKey(day)}',
+        title: _l.t('Дедлайн жақындады', 'Дедлайн близко'),
+        body: _l.t(
+          'Бүгінгі тапсырмаларды жабуға уақыт аз қалды.',
+          'Осталось немного времени, чтобы закрыть задания.',
+        ),
+        when: day.add(const Duration(hours: 20)),
+      );
+    }
   }
 
   bool _hasNotificationToday(NotificationType type) {
