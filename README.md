@@ -1,17 +1,64 @@
-# smart_mentor
+# SMART MENTOR
 
-A new Flutter project.
+AI негізіндегі жеке ментор жүйесі — жатақхана жағдайында оқушыларды информатика
+олимпиадасына жүйелі дайындауға арналған мобильді қосымша.
 
-## Getting Started
+AI-система персональной подготовки к олимпиаде по информатике для учеников,
+живущих в интернате.
 
-This project is a starting point for a Flutter application.
+## Не істейді / Что делает
 
-A few resources to get you started if this is your first Flutter project:
+- Оқушының күн тәртібін талдап, бос уақытын автоматты есептейді
+- Бос уақытқа қарай жеке оқу жоспарын құрады
+- Күн сайын жеке тапсырмалар генерациялайды (Easy / Medium / Hard)
+- Прогресті бақылап, әлсіз тақырыптарды анықтайды
+- Нәтижеге қарай тапсырма күрделілігін бейімдейді
+- AI Mentor чаты арқылы кеңес береді
+- Еске салғыштар жібереді
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+## Экрандар / Экраны
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Splash · Onboarding · Login · Register · Reset password · Profile Setup ·
+Home Dashboard · Smart Schedule · Daily Tasks · Task Details · AI Mentor Chat ·
+Progress · Statistics · Notifications · Profile · Settings
+
+## Технологиялар
+
+- Flutter / Dart
+- Provider — күй басқару
+- SharedPreferences — жергілікті дерекқор
+- fl_chart — графиктер
+- Қазақша және орысша интерфейс (ауыстырғыш параметрлерде)
+- Ашық және қараңғы тема
+
+## Жобаның құрылымы
+
+```
+lib/
+├── core/          тема, түстер, локализация, уақытпен жұмыс
+├── data/
+│   ├── models/    User, Task, ScheduleItem, TestResult, ChatMessage
+│   ├── local/     жергілікті сақтау
+│   ├── repositories/  дерекке қол жеткізу қабаты
+│   └── ai/        тақырыптар каталогы, бос уақыт есептегіші, жоспар генераторы
+├── state/         AppState, SettingsState
+├── widgets/       ортақ UI компоненттері
+└── features/      экрандар
+```
+
+## AI алгоритмі
+
+1. Күн тәртібінен бос уақыт терезелері есептеледі
+2. Оқушы деңгейі мен әлсіз тақырыптары бойынша тақырып таңдалады
+3. Соңғы 7 күндегі нәтиже бойынша күрделілік деңгейі бейімделеді
+4. Тапсырмалар бос уақыт терезелеріне орналастырылады
+5. Орындалған тапсырмалар прогреске және келесі жоспарға әсер етеді
+
+## Іске қосу / Запуск
+
+```bash
+flutter pub get
+flutter run -d chrome
+```
+
+Басқа құрылғылар: `flutter devices` арқылы тізімді көруге болады.
