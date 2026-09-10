@@ -14,10 +14,10 @@ class AppColors {
   static const lightText = Color(0xFF0E1A38);
   static const lightMuted = Color(0xFF7A88A8);
 
-  static const darkBg = Color(0xFF080F26);
-  static const darkSurface = Color(0xFF111C3D);
-  static const darkText = Color(0xFFEDF2FF);
-  static const darkMuted = Color(0xFF8FA0C8);
+  static const darkBg = Color(0xFF0E1013);
+  static const darkSurface = Color(0xFF17191D);
+  static const darkText = Color(0xFFE9EAEC);
+  static const darkMuted = Color(0xFF979BA3);
 
   static const heroGradient = LinearGradient(
     begin: Alignment.topLeft,
@@ -30,6 +30,9 @@ class AppColors {
     end: Alignment.bottomRight,
     colors: [Color(0xFF2D6BFF), Color(0xFF6C4BFF)],
   );
+
+  static const darkField = Color(0xFF1F2227);
+  static const darkElevated = Color(0xFF2A2D33);
 
   static List<Color> difficultyColors = [success, warning, danger];
 }

@@ -19,6 +19,7 @@ class AppTheme {
     ).copyWith(
       primary: AppColors.primary,
       surface: surface,
+      surfaceTint: Colors.transparent,
       error: AppColors.danger,
     );
 
@@ -61,7 +62,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: isDark ? const Color(0xFF16224A) : const Color(0xFFF0F3FB),
+        fillColor: isDark ? AppColors.darkField : const Color(0xFFF0F3FB),
         hintStyle: TextStyle(color: muted, fontSize: 14),
         labelStyle: TextStyle(color: muted),
         prefixIconColor: muted,
@@ -112,7 +113,7 @@ class AppTheme {
         style: TextButton.styleFrom(foregroundColor: AppColors.primary),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: isDark ? const Color(0xFF16224A) : Colors.white,
+        backgroundColor: isDark ? AppColors.darkField : Colors.white,
         labelStyle: TextStyle(color: text, fontWeight: FontWeight.w600),
         side: BorderSide(color: muted.withValues(alpha: 0.2)),
         shape:
@@ -120,7 +121,7 @@ class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: isDark ? const Color(0xFF1D2B57) : AppColors.lightText,
+        backgroundColor: isDark ? AppColors.darkElevated : AppColors.lightText,
         contentTextStyle: const TextStyle(color: Colors.white),
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
