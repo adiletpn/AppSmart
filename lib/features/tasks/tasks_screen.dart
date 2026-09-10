@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/app_colors.dart';
 import '../../core/l10n.dart';
 import '../../state/app_state.dart';
+import '../../widgets/ai_busy_banner.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/gradient_card.dart';
 import 'add_task_sheet.dart';
@@ -57,8 +58,16 @@ class _TasksScreenState extends State<TasksScreen> {
             tooltip: l.t('Тапсырма қосу', 'Добавить задание'),
           ),
           IconButton(
-            onPressed: () => app.generatePlan(DateTime.now(), force: true),
-            icon: const Icon(Icons.refresh),
+            onPressed: app.busy
+                ? null
+                : () => app.generatePlan(DateTime.now(), force: true),
+            icon: app.busy
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2.2),
+                  )
+                : const Icon(Icons.refresh),
             tooltip: l.t('Жаңарту', 'Обновить'),
           ),
         ],
@@ -109,6 +118,10 @@ class _TasksScreenState extends State<TasksScreen> {
                   ],
                 ),
               ),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              child: AiBusyBanner(),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),

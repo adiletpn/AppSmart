@@ -7,6 +7,7 @@ import '../../core/l10n.dart';
 import '../../core/time_utils.dart';
 import '../../data/models/schedule_item.dart';
 import '../../state/app_state.dart';
+import '../../widgets/ai_busy_banner.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/gradient_card.dart';
 import '../../widgets/primary_field.dart';
@@ -283,6 +284,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               ),
             ),
             const SizedBox(height: 20),
+            const AiBusyBanner(),
             SectionHeader(
               title: l.t('Күндік таймлайн', 'Таймлайн дня'),
               actionLabel: l.t('AI қайта құрсын', 'Пересобрать'),

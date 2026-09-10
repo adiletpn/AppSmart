@@ -6,6 +6,7 @@ import '../../core/l10n.dart';
 import '../../core/time_utils.dart';
 import '../../data/models/schedule_item.dart';
 import '../../state/app_state.dart';
+import '../../widgets/ai_busy_banner.dart';
 import '../../widgets/gradient_card.dart';
 import '../../widgets/progress_ring.dart';
 import '../../widgets/section_header.dart';
@@ -118,6 +119,7 @@ class HomeScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 20),
+              const AiBusyBanner(),
               GradientCard(
                 child: Row(
                   children: [
