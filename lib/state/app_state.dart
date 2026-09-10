@@ -12,6 +12,7 @@ import '../data/ai/mentor_ai.dart';
 import '../data/models/app_notification.dart';
 import '../data/models/app_user.dart';
 import '../data/models/chat_message.dart';
+import '../data/models/day_summary.dart';
 import '../data/models/progress_stats.dart';
 import '../data/models/schedule_item.dart';
 import '../data/models/study_task.dart';
@@ -178,6 +179,24 @@ class AppState extends ChangeNotifier {
 
   int freeMinutesFor(DateTime date) =>
       _user == null ? 0 : FreeTimeEngine.freeMinutes(_user!, date, _l);
+
+  List<DaySummary> weekOverview(DateTime anchor) {
+    final monday = TimeUtils.dayStart(
+      anchor.subtract(Duration(days: anchor.weekday - 1)),
+    );
+    return List.generate(7, (index) {
+      final day = monday.add(Duration(days: index));
+      final tasks = tasksFor(day);
+      return DaySummary(
+        date: day,
+        freeMinutes: freeMinutesFor(day),
+        studyMinutes:
+            tasks.fold<int>(0, (sum, task) => sum + task.durationMinutes),
+        totalTasks: tasks.length,
+        doneTasks: tasks.where((task) => task.isDone).length,
+      );
+    });
+  }
 
   String _advice = '';
   String get advice => _advice;
