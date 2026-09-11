@@ -5,6 +5,7 @@ import '../../core/app_colors.dart';
 import '../../core/l10n.dart';
 import '../../state/app_state.dart';
 import '../../widgets/ai_busy_banner.dart';
+import '../../widgets/ai_fallback_banner.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/gradient_card.dart';
 import 'add_task_sheet.dart';
@@ -122,6 +123,12 @@ class _TasksScreenState extends State<TasksScreen> {
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 20),
               child: AiBusyBanner(),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: AiFallbackBanner(
+                onRetry: () => app.generatePlan(DateTime.now(), force: true),
+              ),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),

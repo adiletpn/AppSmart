@@ -7,6 +7,7 @@ import '../../core/time_utils.dart';
 import '../../data/models/schedule_item.dart';
 import '../../state/app_state.dart';
 import '../../widgets/ai_busy_banner.dart';
+import '../../widgets/ai_fallback_banner.dart';
 import '../../widgets/gradient_card.dart';
 import '../../widgets/progress_ring.dart';
 import '../../widgets/section_header.dart';
@@ -120,6 +121,9 @@ class HomeScreen extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               const AiBusyBanner(),
+              AiFallbackBanner(
+                onRetry: () => app.generatePlan(DateTime.now(), force: true),
+              ),
               GradientCard(
                 child: Row(
                   children: [
