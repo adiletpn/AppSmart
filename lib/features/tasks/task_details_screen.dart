@@ -8,6 +8,7 @@ import '../../state/app_state.dart';
 import '../../widgets/gradient_card.dart';
 import '../../widgets/pill.dart';
 import '../../widgets/section_header.dart';
+import 'task_timer.dart';
 
 class TaskDetailsScreen extends StatelessWidget {
   const TaskDetailsScreen({super.key, required this.taskId});
@@ -107,7 +108,12 @@ class TaskDetailsScreen extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 22),
+            if (!task.isDone) ...[
+              TaskTimer(task: task),
+              const SizedBox(height: 8),
+            ],
+            const SizedBox(height: 14),
             SectionHeader(title: l.t('Сипаттама', 'Описание')),
             SurfaceCard(
               child: Text(
@@ -166,13 +172,7 @@ class TaskDetailsScreen extends StatelessWidget {
                 icon: const Icon(Icons.check),
                 label: Text(l.t('Орындалды', 'Выполнено')),
               ),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: () =>
-                    app.setTaskStatus(task.id, TaskStatus.inProgress),
-                icon: const Icon(Icons.play_arrow, size: 20),
-                label: Text(l.t('Бастау', 'Начать')),
-              ),
+
             ],
           ],
         ),
