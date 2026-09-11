@@ -4,12 +4,15 @@ import '../models/progress_stats.dart';
 import '../models/schedule_item.dart';
 import '../models/study_task.dart';
 
+enum PlanSource { ai, local }
+
 class DailyPlan {
   final List<StudyTask> tasks;
   final List<ScheduleItem> schedule;
   final String advice;
   final int freeMinutes;
   final int studyMinutes;
+  final PlanSource source;
 
   const DailyPlan({
     required this.tasks,
@@ -17,6 +20,7 @@ class DailyPlan {
     required this.advice,
     required this.freeMinutes,
     required this.studyMinutes,
+    this.source = PlanSource.local,
   });
 }
 

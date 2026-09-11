@@ -215,6 +215,7 @@ ${_paceHint(pace)}
       ),
       freeMinutes: freeMinutes,
       studyMinutes: tasks.fold<int>(0, (sum, t) => sum + t.durationMinutes),
+      source: PlanSource.ai,
     );
   }
 
