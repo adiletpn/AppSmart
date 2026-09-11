@@ -11,6 +11,7 @@ import '../models/schedule_item.dart';
 import '../models/study_task.dart';
 import 'free_time_engine.dart';
 import 'mentor_ai.dart';
+import 'pace_analyzer.dart';
 import 'topic_catalog.dart';
 
 class LocalMentorAi implements MentorAi {
@@ -29,10 +30,13 @@ class LocalMentorAi implements MentorAi {
     final l = L10n(isKz ? AppLang.kk : AppLang.ru);
     final windows = FreeTimeEngine.freeWindows(user, date, l);
     final freeMinutes = windows.fold<int>(0, (sum, w) => sum + w.minutes);
-    final budget = min(freeMinutes, user.dailyStudyMinutes);
+    final pace = PaceAnalyzer.analyze(history, date);
+    final budget = pace.adjustBudget(
+      min(freeMinutes, user.dailyStudyMinutes),
+    );
 
     final topics = _pickTopics(user, stats, history, date);
-    final difficulty = _difficultyFor(user, stats, history);
+    final difficulty = _difficultyFor(user, stats, history, pace);
     final tasks = _buildTasks(
       user: user,
       date: date,
@@ -103,6 +107,7 @@ class LocalMentorAi implements MentorAi {
     AppUser user,
     ProgressStats stats,
     List<StudyTask> history,
+    PaceReport pace,
   ) {
     final base = switch (user.level) {
       PrepLevel.beginner => TaskDifficulty.easy,
@@ -117,10 +122,16 @@ class LocalMentorAi implements MentorAi {
 
     final done = recent.where((t) => t.isDone).length / recent.length;
     final index = TaskDifficulty.values.indexOf(base);
+    if (pace.pace == Pace.slow) {
+      return TaskDifficulty.values[max(index - 1, 0)];
+    }
     if (done >= 0.8 && stats.testAverage >= 0.7) {
       return TaskDifficulty.values[min(index + 1, 2)];
     }
     if (done <= 0.4) return TaskDifficulty.values[max(index - 1, 0)];
+    if (pace.pace == Pace.fast && done >= 0.7) {
+      return TaskDifficulty.values[min(index + 1, 2)];
+    }
     return base;
   }
 
