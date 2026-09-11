@@ -13,6 +13,7 @@ import '../models/study_task.dart';
 import 'free_time_engine.dart';
 import 'local_mentor_ai.dart';
 import 'mentor_ai.dart';
+import 'pace_analyzer.dart';
 import 'topic_catalog.dart';
 
 class _ModelOption {
@@ -110,6 +111,17 @@ class GeminiMentorAi implements MentorAi {
     }
   }
 
+  String _paceHint(PaceReport pace) => switch (pace.pace) {
+        Pace.slow =>
+          'Оқушы тапсырмаларға жоспардан ${((pace.ratio - 1) * 100).round()}% көп '
+              'уақыт жұмсайды. Тапсырмаларды жеңілдет және қысқарт.',
+        Pace.fast =>
+          'Оқушы тапсырмаларды жоспардан жылдам бітіреді '
+              '(жоспардың ${(pace.ratio * 100).round()}%-ы). '
+              'Күрделілікті сәл көтеруге болады.',
+        _ => '',
+      };
+
   String _profile(AppUser user, ProgressStats stats, bool isKz) {
     final weak = stats.weakTopics.map((e) => e.key).join(', ');
     final language = isKz ? 'қазақ тілінде' : 'на русском языке';
@@ -134,7 +146,10 @@ class GeminiMentorAi implements MentorAi {
     final l = L10n(isKz ? AppLang.kk : AppLang.ru);
     final windows = FreeTimeEngine.freeWindows(user, date, l);
     final freeMinutes = windows.fold<int>(0, (sum, w) => sum + w.minutes);
-    final budget = min(freeMinutes, user.dailyStudyMinutes);
+    final pace = PaceAnalyzer.analyze(history, date);
+    final budget = pace.adjustBudget(
+      min(freeMinutes, user.dailyStudyMinutes),
+    );
     if (budget < 20) {
       return _fallback.buildDay(
         user: user,
@@ -160,6 +175,7 @@ class GeminiMentorAi implements MentorAi {
       'Тек JSON массивін қайтар, түсіндірмесіз, markdown белгісіз.',
       '''
 ${_profile(user, stats, isKz)}
+${_paceHint(pace)}
 Бүгінгі дайындыққа $budget минут бар.
 Қолжетімді тақырыптар: $topics.
 Соңғы күндері берілген тапсырмалар: ${recent.isEmpty ? 'жоқ' : recent}.
