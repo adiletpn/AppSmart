@@ -103,6 +103,10 @@ class L10n {
   String longDate(DateTime date) =>
       '${date.day} ${months[date.month - 1]}, ${weekdays[date.weekday - 1]}';
 
+  String shortDate(DateTime date) =>
+      '${date.day.toString().padLeft(2, '0')}.'
+      '${date.month.toString().padLeft(2, '0')}.${date.year}';
+
   String duration(int minutes) {
     if (minutes < 60) return '$minutes ${t('мин', 'мин')}';
     final h = minutes ~/ 60;
