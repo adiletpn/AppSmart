@@ -201,12 +201,26 @@ class AppState extends ChangeNotifier {
   String _advice = '';
   String get advice => _advice;
 
+  PlanSource? _lastPlanSource;
+  PlanSource? get lastPlanSource => _lastPlanSource;
+
+  bool get aiFellBack =>
+      _aiRequested && _lastPlanSource == PlanSource.local;
+
+  bool _aiRequested = false;
+
+  void dismissFallbackNotice() {
+    _aiRequested = false;
+    notifyListeners();
+  }
+
   Future<void> generatePlan(DateTime date, {bool force = false}) async {
     final user = _user;
     if (user == null) return;
     if (!force && tasksFor(date).isNotEmpty) return;
 
     _setBusy(true);
+    _aiRequested = _ai is! LocalMentorAi;
     try {
       final plan = await _ai.buildDay(
         user: user,
@@ -221,6 +235,7 @@ class AppState extends ChangeNotifier {
       _tasks.addAll(plan.tasks);
       _schedule.addAll(plan.schedule);
       _advice = plan.advice;
+      _lastPlanSource = plan.source;
       await _persistTasks();
       await _persistSchedule();
       if (plan.tasks.isNotEmpty) {
