@@ -135,6 +135,73 @@ class ProgressScreen extends StatelessWidget {
                 ),
               ],
             ),
+            if (stats.hasTracked) ...[
+              const SizedBox(height: 26),
+              SectionHeader(
+                title: l.t('Жоспар мен факт', 'План и факт'),
+                subtitle: l.t('Таймермен өлшенген уақыт',
+                    'Время, замеренное таймером'),
+              ),
+              SurfaceCard(
+                child: Column(
+                  children: [
+                    _PlanFactRow(
+                      label: l.t('Жоспарланған', 'Запланировано'),
+                      value: l.duration(stats.studyMinutes),
+                      color: AppColors.primary,
+                    ),
+                    const SizedBox(height: 12),
+                    _PlanFactRow(
+                      label: l.t('Нақты жұмсалған', 'Фактически потрачено'),
+                      value: l.duration(stats.trackedMinutes),
+                      color: stats.trackedMinutes > stats.studyMinutes
+                          ? AppColors.warning
+                          : AppColors.success,
+                    ),
+                    const SizedBox(height: 14),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: LinearProgressIndicator(
+                        value: (stats.accuracy / 2).clamp(0.0, 1.0),
+                        minHeight: 8,
+                        backgroundColor: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.08),
+                        color: stats.accuracy > 1.2
+                            ? AppColors.warning
+                            : AppColors.success,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      stats.accuracy > 1.2
+                          ? l.t(
+                              'Тапсырмаларға жоспардан ұзақ уақыт кетіп жатыр.',
+                              'На задания уходит больше времени, чем в плане.',
+                            )
+                          : stats.accuracy < 0.7
+                              ? l.t(
+                                  'Жоспардан жылдам бітіріп жатырсың — күрделілікті көтеруге болады.',
+                                  'Ты справляешься быстрее плана — можно повысить сложность.',
+                                )
+                              : l.t(
+                                  'Жоспар нақты уақытыңа сәйкес келеді.',
+                                  'План совпадает с реальным временем.',
+                                ),
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        height: 1.4,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 26),
             SectionHeader(
               title: l.t('Апталық белсенділік', 'Активность за неделю'),
@@ -269,6 +336,46 @@ class ProgressScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _PlanFactRow extends StatelessWidget {
+  const _PlanFactRow({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13.5,
+              color:
+                  Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.65),
+            ),
+          ),
+        ),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+        ),
+      ],
     );
   }
 }
