@@ -24,6 +24,8 @@ class StudyTask {
   final DateTime createdAt;
   final DateTime? completedAt;
   final String? startTime;
+  final int spentSeconds;
+  final DateTime? startedAt;
 
   const StudyTask({
     required this.id,
@@ -39,9 +41,19 @@ class StudyTask {
     required this.createdAt,
     this.completedAt,
     this.startTime,
+    this.spentSeconds = 0,
+    this.startedAt,
   });
 
   bool get isDone => status == TaskStatus.done;
+
+  bool get isRunning => startedAt != null;
+
+  int get elapsedSeconds => startedAt == null
+      ? spentSeconds
+      : spentSeconds + DateTime.now().difference(startedAt!).inSeconds;
+
+  int get spentMinutes => (elapsedSeconds / 60).round();
 
   StudyTask copyWith({
     String? title,
@@ -54,7 +66,10 @@ class StudyTask {
     TaskStatus? status,
     DateTime? completedAt,
     String? startTime,
+    int? spentSeconds,
+    DateTime? startedAt,
     bool clearCompletedAt = false,
+    bool clearStartedAt = false,
   }) =>
       StudyTask(
         id: id,
@@ -70,6 +85,8 @@ class StudyTask {
         createdAt: createdAt,
         completedAt: clearCompletedAt ? null : (completedAt ?? this.completedAt),
         startTime: startTime ?? this.startTime,
+        spentSeconds: spentSeconds ?? this.spentSeconds,
+        startedAt: clearStartedAt ? null : (startedAt ?? this.startedAt),
       );
 
   Map<String, dynamic> toJson() => {
@@ -86,6 +103,8 @@ class StudyTask {
         'createdAt': createdAt.toIso8601String(),
         'completedAt': completedAt?.toIso8601String(),
         'startTime': startTime,
+        'spentSeconds': spentSeconds,
+        'startedAt': startedAt?.toIso8601String(),
       };
 
   factory StudyTask.fromJson(Map<String, dynamic> json) => StudyTask(
@@ -110,5 +129,7 @@ class StudyTask {
             DateTime.now(),
         completedAt: DateTime.tryParse(json['completedAt'] as String? ?? ''),
         startTime: json['startTime'] as String?,
+        spentSeconds: json['spentSeconds'] as int? ?? 0,
+        startedAt: DateTime.tryParse(json['startedAt'] as String? ?? ''),
       );
 }
