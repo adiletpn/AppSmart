@@ -255,13 +255,44 @@ class AppState extends ChangeNotifier {
     final index = _tasks.indexWhere((t) => t.id == taskId);
     if (index == -1) return;
     final task = _tasks[index];
+    final stopTimer = task.isRunning && status != TaskStatus.inProgress;
     _tasks[index] = task.copyWith(
       status: status,
       completedAt: status == TaskStatus.done ? DateTime.now() : null,
       clearCompletedAt: status != TaskStatus.done,
+      spentSeconds: stopTimer ? task.elapsedSeconds : null,
+      clearStartedAt: stopTimer,
     );
     await _persistTasks();
     if (status == TaskStatus.done) await _celebrate();
+  }
+
+  Future<void> startTimer(String taskId) async {
+    final index = _tasks.indexWhere((t) => t.id == taskId);
+    if (index == -1 || _tasks[index].isRunning) return;
+    for (var i = 0; i < _tasks.length; i++) {
+      if (_tasks[i].isRunning) {
+        _tasks[i] = _tasks[i].copyWith(
+          spentSeconds: _tasks[i].elapsedSeconds,
+          clearStartedAt: true,
+        );
+      }
+    }
+    _tasks[index] = _tasks[index].copyWith(
+      status: TaskStatus.inProgress,
+      startedAt: DateTime.now(),
+    );
+    await _persistTasks();
+  }
+
+  Future<void> pauseTimer(String taskId) async {
+    final index = _tasks.indexWhere((t) => t.id == taskId);
+    if (index == -1 || !_tasks[index].isRunning) return;
+    _tasks[index] = _tasks[index].copyWith(
+      spentSeconds: _tasks[index].elapsedSeconds,
+      clearStartedAt: true,
+    );
+    await _persistTasks();
   }
 
   Future<void> _celebrate() async {
