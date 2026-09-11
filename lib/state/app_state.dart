@@ -550,6 +550,8 @@ class AppState extends ChangeNotifier {
     final done = _tasks.where((t) => t.isDone).toList();
     final studyMinutes =
         done.fold<int>(0, (total, t) => total + t.durationMinutes);
+    final trackedMinutes =
+        _tasks.fold<int>(0, (total, t) => total + t.spentMinutes);
     final days = done.map((t) => TimeUtils.dateKey(t.date)).toSet();
 
     var streak = 0;
@@ -589,6 +591,7 @@ class AppState extends ChangeNotifier {
       completedTasks: done.length,
       totalTasks: _tasks.length,
       studyMinutes: studyMinutes,
+      trackedMinutes: trackedMinutes,
       streakDays: streak,
       activeDays: days.length,
       testAverage: testAverage,
