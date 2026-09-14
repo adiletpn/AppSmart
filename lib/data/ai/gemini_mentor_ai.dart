@@ -9,6 +9,7 @@ import '../../core/time_utils.dart';
 import '../models/app_user.dart';
 import '../models/chat_message.dart';
 import '../models/progress_stats.dart';
+import '../models/quiz_question.dart';
 import '../models/study_task.dart';
 import 'free_time_engine.dart';
 import 'local_mentor_ai.dart';
@@ -271,8 +272,74 @@ ${_paceHint(pace)}
     required String topicId,
     required int count,
     required bool isKz,
-  }) =>
-      _fallback.buildQuiz(topicId: topicId, count: count, isKz: isKz);
+  }) async {
+    final topic = TopicCatalog.byName(topicId);
+    if (topic == null) return QuizSet.empty;
+
+    final name = topic.name(isKz);
+    final answer = await _ask(
+      'Сен информатика олимпиадасына дайындайтын ментор боласың. '
+      'Тек JSON массивін қайтар, түсіндірмесіз, markdown белгісіз.',
+      """
+Тақырып: $name. Оқушы деңгейі: ${topic.level.name}.
+Жауап тілі: ${isKz ? 'қазақ тілінде' : 'на русском языке'}.
+
+$count сұрақтан тұратын тест құрастыр. Әр сұрақта дәл 4 нұсқа болсын,
+тек біреуі дұрыс. Сұрақтар қысқа, нақты әрі осы тақырып бойынша болсын.
+correct — дұрыс нұсқаның индексі (0-ден басталады).
+explanation — бір сөйлемдік түсіндірме.
+Формат: [{"prompt":"","options":["","","",""],"correct":0,"explanation":""}]
+""",
+      maxTokens: 1400,
+    );
+
+    final questions = _parseQuestions(answer, topic, isKz);
+    if (questions.isEmpty) {
+      return _fallback.buildQuiz(topicId: topicId, count: count, isKz: isKz);
+    }
+
+    return QuizSet(
+      topic: name,
+      questions: questions,
+      source: QuizSource.ai,
+    );
+  }
+
+  List<QuizQuestion> _parseQuestions(String? answer, Topic topic, bool isKz) {
+    if (answer == null) return [];
+    final start = answer.indexOf('[');
+    final end = answer.lastIndexOf(']');
+    if (start == -1 || end <= start) return [];
+
+    try {
+      final decoded = jsonDecode(answer.substring(start, end + 1));
+      if (decoded is! List) return [];
+
+      final questions = <QuizQuestion>[];
+      for (var i = 0; i < decoded.length; i++) {
+        final item = decoded[i];
+        if (item is! Map) continue;
+
+        final options = (item['options'] as List?)
+                ?.map((e) => e.toString().trim())
+                .where((e) => e.isNotEmpty)
+                .toList() ??
+            const <String>[];
+
+        questions.add(QuizQuestion(
+          id: '${topic.id}-ai-$i',
+          topic: topic.name(isKz),
+          prompt: (item['prompt'] as String? ?? '').trim(),
+          options: options,
+          correctIndex: item['correct'] as int? ?? 0,
+          explanation: (item['explanation'] as String? ?? '').trim(),
+        ));
+      }
+      return questions;
+    } on FormatException {
+      return [];
+    }
+  }
 
   @override
   Future<String> advice({
