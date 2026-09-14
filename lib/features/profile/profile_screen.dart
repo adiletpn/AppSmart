@@ -9,6 +9,7 @@ import '../../widgets/section_header.dart';
 import '../auth/login_screen.dart';
 import '../notifications/notifications_screen.dart';
 import '../profile_setup/profile_setup_screen.dart';
+import '../progress/report_screen.dart';
 import '../progress/statistics_screen.dart';
 import '../settings/settings_screen.dart';
 
@@ -135,6 +136,13 @@ class ProfileScreen extends StatelessWidget {
               title: l.t('Статистика', 'Статистика'),
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const StatisticsScreen()),
+              ),
+            ),
+            _MenuTile(
+              icon: Icons.description_outlined,
+              title: l.t('Дайындық есебі', 'Отчёт о подготовке'),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ReportScreen()),
               ),
             ),
             _MenuTile(
