@@ -267,6 +267,14 @@ ${_paceHint(pace)}
   }
 
   @override
+  Future<QuizSet> buildQuiz({
+    required String topicId,
+    required int count,
+    required bool isKz,
+  }) =>
+      _fallback.buildQuiz(topicId: topicId, count: count, isKz: isKz);
+
+  @override
   Future<String> advice({
     required AppUser user,
     required ProgressStats stats,

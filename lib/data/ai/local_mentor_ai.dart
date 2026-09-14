@@ -12,6 +12,7 @@ import '../models/study_task.dart';
 import 'free_time_engine.dart';
 import 'mentor_ai.dart';
 import 'pace_analyzer.dart';
+import 'question_bank.dart';
 import 'topic_catalog.dart';
 
 class LocalMentorAi implements MentorAi {
@@ -321,6 +322,22 @@ class LocalMentorAi implements MentorAi {
     return items;
   }
 
+  @override
+  Future<QuizSet> buildQuiz({
+    required String topicId,
+    required int count,
+    required bool isKz,
+  }) async {
+    final questions =
+        QuestionBank.forTopic(topicId, isKz: isKz, count: count);
+    if (questions.isEmpty) return QuizSet.empty;
+
+    return QuizSet(
+      topic: questions.first.topic,
+      questions: questions,
+      source: QuizSource.bank,
+    );
+  }
   @override
   Future<String> advice({
     required AppUser user,
