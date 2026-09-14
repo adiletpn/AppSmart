@@ -9,11 +9,13 @@ import '../core/time_utils.dart';
 import '../data/ai/free_time_engine.dart';
 import '../data/ai/local_mentor_ai.dart';
 import '../data/ai/mentor_ai.dart';
+import '../data/ai/question_bank.dart';
 import '../data/models/app_notification.dart';
 import '../data/models/app_user.dart';
 import '../data/models/chat_message.dart';
 import '../data/models/day_summary.dart';
 import '../data/models/progress_stats.dart';
+import '../data/models/quiz_attempt.dart';
 import '../data/models/schedule_item.dart';
 import '../data/models/study_task.dart';
 import '../data/models/test_result.dart';
@@ -56,6 +58,8 @@ class AppState extends ChangeNotifier {
   bool _busy = false;
   bool _thinking = false;
   bool _isKz = true;
+  QuizAttempt? _quiz;
+  bool _quizLoading = false;
 
   AppUser? get user => _user;
   bool get isLoggedIn => _user != null;
@@ -67,6 +71,8 @@ class AppState extends ChangeNotifier {
   List<ChatMessage> get messages => List.unmodifiable(_messages);
   List<AppNotification> get notifications => List.unmodifiable(_notifications);
   int get unreadCount => _notifications.where((n) => !n.read).length;
+  QuizAttempt? get quiz => _quiz;
+  bool get quizLoading => _quizLoading;
 
   void configure({required MentorAi ai, required bool isKz}) {
     final languageChanged = _isKz != isKz;
@@ -153,6 +159,7 @@ class AppState extends ChangeNotifier {
     _tests = [];
     _messages = [];
     _notifications = [];
+    _quiz = null;
     notifyListeners();
   }
 
@@ -365,6 +372,38 @@ class AppState extends ChangeNotifier {
       date: DateTime.now(),
     ));
     await progressRepo.saveAll(user.id, _tests);
+    notifyListeners();
+  }
+
+  Future<void> startQuiz(String topicId) async {
+    if (_quizLoading) return;
+    _quizLoading = true;
+    _quiz = null;
+    notifyListeners();
+
+    try {
+      final set = await _ai.buildQuiz(
+        topicId: topicId,
+        count: QuestionBank.questionsPerTest,
+        isKz: _isKz,
+      );
+      _quiz = set.isEmpty
+          ? null
+          : QuizAttempt.start(
+              topic: set.topic,
+              questions: set.questions,
+              now: DateTime.now(),
+              fromAi: set.source == QuizSource.ai,
+            );
+    } finally {
+      _quizLoading = false;
+      notifyListeners();
+    }
+  }
+
+  void closeQuiz() {
+    if (_quiz == null) return;
+    _quiz = null;
     notifyListeners();
   }
 
@@ -640,6 +679,7 @@ class AppState extends ChangeNotifier {
     _tests = [];
     _messages = [];
     _notifications = [];
+    _quiz = null;
     notifyListeners();
   }
 
