@@ -382,6 +382,37 @@ class QuestionBank {
   static List<String> get topics =>
       _items.map((item) => item.topicId).toSet().toList();
 
+  /// Тақырыпта сұрақ аз болса, сол деңгейдегі көрші тақырыптардан толықтырады.
+  static List<QuizQuestion> forTest(
+    String topicId, {
+    required bool isKz,
+    int count = questionsPerTest,
+    int seed = 0,
+  }) {
+    final own = forTopic(topicId, isKz: isKz, count: count, seed: seed);
+    if (own.length >= count) return own;
+
+    final topic = TopicCatalog.byName(topicId);
+    if (topic == null) return own;
+
+    final neighbours = TopicCatalog.focusFor(topic.level)
+        .where((item) => item.id != topic.id && hasTopic(item.id))
+        .toList()
+      ..shuffle(Random(seed));
+
+    final result = [...own];
+    for (final neighbour in neighbours) {
+      if (result.length >= count) break;
+      result.addAll(forTopic(
+        neighbour.id,
+        isKz: isKz,
+        count: count - result.length,
+        seed: seed,
+      ));
+    }
+    return result.take(count).toList();
+  }
+
   static List<QuizQuestion> forTopic(
     String topicId, {
     required bool isKz,

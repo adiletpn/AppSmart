@@ -331,7 +331,7 @@ class LocalMentorAi implements MentorAi {
     final topic = TopicCatalog.byName(topicId);
     if (topic == null) return QuizSet.empty;
 
-    final questions = QuestionBank.forTopic(
+    final questions = QuestionBank.forTest(
       topic.id,
       isKz: isKz,
       count: count,
