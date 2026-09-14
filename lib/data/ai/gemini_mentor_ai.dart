@@ -293,8 +293,8 @@ explanation — бір сөйлемдік түсіндірме.
       maxTokens: 1400,
     );
 
-    final questions = _parseQuestions(answer, topic, isKz);
-    if (questions.isEmpty) {
+    final questions = _parseQuestions(answer, topic, isKz, count);
+    if (questions.length < _minQuizQuestions) {
       return _fallback.buildQuiz(topicId: topicId, count: count, isKz: isKz);
     }
 
@@ -305,7 +305,14 @@ explanation — бір сөйлемдік түсіндірме.
     );
   }
 
-  List<QuizQuestion> _parseQuestions(String? answer, Topic topic, bool isKz) {
+  static const _minQuizQuestions = 2;
+
+  List<QuizQuestion> _parseQuestions(
+    String? answer,
+    Topic topic,
+    bool isKz,
+    int count,
+  ) {
     if (answer == null) return [];
     final start = answer.indexOf('[');
     final end = answer.lastIndexOf(']');
@@ -326,19 +333,36 @@ explanation — бір сөйлемдік түсіндірме.
                 .toList() ??
             const <String>[];
 
-        questions.add(QuizQuestion(
+        final question = QuizQuestion(
           id: '${topic.id}-ai-$i',
           topic: topic.name(isKz),
           prompt: (item['prompt'] as String? ?? '').trim(),
           options: options,
-          correctIndex: item['correct'] as int? ?? 0,
+          correctIndex: _optionIndex(item['correct'], options.length),
           explanation: (item['explanation'] as String? ?? '').trim(),
-        ));
+        );
+
+        final duplicate = questions.any(
+          (other) => other.prompt.toLowerCase() == question.prompt.toLowerCase(),
+        );
+        if (question.isValid && !duplicate) questions.add(question);
+        if (questions.length == count) break;
       }
       return questions;
     } on FormatException {
       return [];
     }
+  }
+
+  /// Модель индексті сан, бөлшек немесе жол түрінде қайтаруы мүмкін.
+  int _optionIndex(Object? value, int length) {
+    final index = switch (value) {
+      final int number => number,
+      final double number => number.round(),
+      final String text => int.tryParse(text.trim()) ?? -1,
+      _ => -1,
+    };
+    return index >= 0 && index < length ? index : -1;
   }
 
   @override
