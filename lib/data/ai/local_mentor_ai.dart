@@ -328,16 +328,28 @@ class LocalMentorAi implements MentorAi {
     required int count,
     required bool isKz,
   }) async {
-    final questions =
-        QuestionBank.forTopic(topicId, isKz: isKz, count: count);
+    final topic = TopicCatalog.byName(topicId);
+    if (topic == null) return QuizSet.empty;
+
+    final questions = QuestionBank.forTopic(
+      topic.id,
+      isKz: isKz,
+      count: count,
+      seed: _quizSeed(topic.id, DateTime.now()),
+    );
     if (questions.isEmpty) return QuizSet.empty;
 
     return QuizSet(
-      topic: questions.first.topic,
+      topic: topic.name(isKz),
       questions: questions,
       source: QuizSource.bank,
     );
   }
+
+  /// Күн ішінде тест тұрақты, келесі күні сұрақтар қайта араласады.
+  int _quizSeed(String topicId, DateTime date) =>
+      date.year * 10000 + date.month * 100 + date.day + topicId.hashCode;
+
   @override
   Future<String> advice({
     required AppUser user,
