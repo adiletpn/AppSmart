@@ -39,7 +39,7 @@ StudyTask buildTask({
     );
 
 void main() {
-  final l = L10n(AppLang.ru);
+  const l = L10n(AppLang.ru);
 
   test('отчёт содержит данные ученика и общий результат', () {
     final report = ProgressReport.build(
