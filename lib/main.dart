@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'app.dart';
+import 'data/local/local_cache.dart';
 import 'data/local/local_store.dart';
 import 'firebase_options.dart';
 import 'data/repositories/auth_repository.dart';
@@ -41,6 +42,7 @@ Future<void> main() async {
             progressRepo: const ProgressRepository(),
             chatRepo: const ChatRepository(),
             notificationsRepo: const NotificationRepository(),
+            cache: LocalCache(store),
           )..bootstrap(),
         ),
       ],

@@ -10,6 +10,7 @@ import '../data/ai/free_time_engine.dart';
 import '../data/ai/local_mentor_ai.dart';
 import '../data/ai/mentor_ai.dart';
 import '../data/ai/question_bank.dart';
+import '../data/local/local_cache.dart';
 import '../data/models/app_notification.dart';
 import '../data/models/app_user.dart';
 import '../data/models/chat_message.dart';
@@ -37,6 +38,7 @@ class AppState extends ChangeNotifier {
     required this.progressRepo,
     required this.chatRepo,
     required this.notificationsRepo,
+    required this.cache,
   });
 
   final AuthRepository auth;
@@ -45,6 +47,7 @@ class AppState extends ChangeNotifier {
   final ProgressRepository progressRepo;
   final ChatRepository chatRepo;
   final NotificationRepository notificationsRepo;
+  final LocalCache cache;
 
   static const _uuid = Uuid();
 
@@ -95,15 +98,53 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Алдымен құрылғыдағы көшірме көрсетіледі, сосын сервер жаңартады.
+  /// Сұраныстар қатар жіберіледі — бұрын бесеуі кезекпен күтілетін.
   Future<void> _loadUserData() async {
     final id = _user!.id;
-    _tasks = await tasksRepo.all(id);
-    _schedule = await scheduleRepo.all(id);
-    _tests = await progressRepo.all(id);
-    _messages = await chatRepo.all(id);
-    _notifications = await notificationsRepo.all(id);
+
+    final cached = cache.read(id);
+    if (!cached.isEmpty) {
+      _tasks = [...cached.tasks];
+      _schedule = [...cached.schedule];
+      _tests = [...cached.tests];
+      _messages = [...cached.messages];
+      _notifications = [...cached.notifications];
+      _syncMissedTasks();
+      notifyListeners();
+    }
+
+    final loaded = await Future.wait([
+      tasksRepo.all(id),
+      scheduleRepo.all(id),
+      progressRepo.all(id),
+      chatRepo.all(id),
+      notificationsRepo.all(id),
+    ]);
+
+    _tasks = loaded[0] as List<StudyTask>;
+    _schedule = loaded[1] as List<ScheduleItem>;
+    _tests = loaded[2] as List<TestResult>;
+    _messages = loaded[3] as List<ChatMessage>;
+    _notifications = loaded[4] as List<AppNotification>;
     _syncMissedTasks();
+    unawaited(_saveCache());
     unawaited(_registerPushToken(id));
+  }
+
+  Future<void> _saveCache() async {
+    final user = _user;
+    if (user == null) return;
+    await cache.write(
+      user.id,
+      CachedData(
+        tasks: _tasks,
+        schedule: _schedule,
+        tests: _tests,
+        messages: _messages,
+        notifications: _notifications,
+      ),
+    );
   }
 
   Future<void> _registerPushToken(String userId) async {
@@ -152,7 +193,9 @@ class AppState extends ChangeNotifier {
   Future<void> resetPassword(String email) => auth.sendPasswordReset(email);
 
   Future<void> logout() async {
+    final id = _user?.id;
     await auth.logout();
+    if (id != null) await cache.clear(id);
     _user = null;
     _tasks = [];
     _schedule = [];
@@ -372,6 +415,7 @@ class AppState extends ChangeNotifier {
       date: DateTime.now(),
     ));
     notifyListeners();
+    unawaited(_saveCache());
     await progressRepo.saveAll(user.id, _tests);
   }
 
@@ -468,6 +512,7 @@ class AppState extends ChangeNotifier {
     ));
     _thinking = true;
     notifyListeners();
+    unawaited(_saveCache());
     await chatRepo.saveAll(user.id, _messages);
 
     final answer = await _ai.reply(
@@ -487,6 +532,7 @@ class AppState extends ChangeNotifier {
     ));
     _thinking = false;
     notifyListeners();
+    unawaited(_saveCache());
     await chatRepo.saveAll(user.id, _messages);
   }
 
@@ -495,6 +541,7 @@ class AppState extends ChangeNotifier {
     if (user == null) return;
     _messages = [];
     notifyListeners();
+    unawaited(_saveCache());
     await chatRepo.saveAll(user.id, _messages);
   }
 
@@ -520,6 +567,7 @@ class AppState extends ChangeNotifier {
       _notifications = _notifications.take(50).toList();
     }
     notifyListeners();
+    unawaited(_saveCache());
     await notificationsRepo.saveAll(user.id, _notifications);
   }
 
@@ -638,6 +686,7 @@ class AppState extends ChangeNotifier {
     _notifications =
         _notifications.map((n) => n.copyWith(read: true)).toList();
     notifyListeners();
+    unawaited(_saveCache());
     await notificationsRepo.saveAll(user.id, _notifications);
   }
 
@@ -646,6 +695,7 @@ class AppState extends ChangeNotifier {
     if (user == null) return;
     _notifications = [];
     notifyListeners();
+    unawaited(_saveCache());
     await notificationsRepo.saveAll(user.id, _notifications);
   }
 
@@ -709,6 +759,7 @@ class AppState extends ChangeNotifier {
     final user = _user;
     if (user == null) return;
     notifyListeners();
+    unawaited(_saveCache());
     await tasksRepo.saveAll(user.id, _tasks);
   }
 
@@ -716,6 +767,7 @@ class AppState extends ChangeNotifier {
     final user = _user;
     if (user == null) return;
     notifyListeners();
+    unawaited(_saveCache());
     await scheduleRepo.saveAll(user.id, _schedule);
   }
 
@@ -725,6 +777,7 @@ class AppState extends ChangeNotifier {
     for (final name in ['tasks', 'schedule', 'tests', 'chat', 'notifications']) {
       await FirestoreService.deleteAll(user.id, name);
     }
+    await cache.clear(user.id);
     _tasks = [];
     _schedule = [];
     _tests = [];
