@@ -21,6 +21,10 @@ class QuizScreen extends StatefulWidget {
 class _QuizScreenState extends State<QuizScreen> {
   late final AppState _app;
 
+  /// Жауап бергеннен кейін сұрақ экранда қалады: оқушы қайсысы дұрыс
+  /// екенін көріп, өзі «Әрі қарай» дегенде ғана келесіге өтеді.
+  int _shown = 0;
+
   @override
   void initState() {
     super.initState();
@@ -49,9 +53,14 @@ class _QuizScreenState extends State<QuizScreen> {
             ? _Loading(l: l)
             : attempt == null
                 ? _Unavailable(l: l)
-                : attempt.isFinished
+                : _shown >= attempt.total
                     ? _Finished(l: l, attempt: attempt)
-                    : _Question(l: l, attempt: attempt),
+                    : _Question(
+                        l: l,
+                        attempt: attempt,
+                        index: _shown,
+                        onNext: () => setState(() => _shown++),
+                      ),
       ),
     );
   }
@@ -99,15 +108,24 @@ class _Unavailable extends StatelessWidget {
 }
 
 class _Question extends StatelessWidget {
-  const _Question({required this.l, required this.attempt});
+  const _Question({
+    required this.l,
+    required this.attempt,
+    required this.index,
+    required this.onNext,
+  });
 
   final L10n l;
   final QuizAttempt attempt;
+  final int index;
+  final VoidCallback onNext;
 
   @override
   Widget build(BuildContext context) {
-    final question = attempt.current!;
-    final number = attempt.currentIndex + 1;
+    final question = attempt.questions[index];
+    final chosen = attempt.answerAt(index);
+    final revealed = chosen != QuizAttempt.noAnswer;
+    final isLast = index == attempt.total - 1;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
@@ -119,7 +137,7 @@ class _Question extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    '$number / ${attempt.total}',
+                    '${index + 1} / ${attempt.total}',
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -148,9 +166,58 @@ class _Question extends StatelessWidget {
         for (var i = 0; i < question.options.length; i++) ...[
           _Option(
             text: question.options[i],
-            onTap: () => context.read<AppState>().answerQuiz(i),
+            revealed: revealed,
+            correct: question.isCorrect(i),
+            chosen: chosen == i,
+            onTap: revealed
+                ? null
+                : () => context.read<AppState>().answerQuiz(i),
           ),
           const SizedBox(height: 10),
+        ],
+        if (revealed) ...[
+          const SizedBox(height: 8),
+          SurfaceCard(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  question.isCorrect(chosen)
+                      ? Icons.check_circle_outline
+                      : Icons.info_outline,
+                  size: 20,
+                  color: question.isCorrect(chosen)
+                      ? AppColors.success
+                      : AppColors.warning,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    question.explanation.isEmpty
+                        ? l.t(
+                            'Дұрыс жауап: ${question.correctOption}',
+                            'Верный ответ: ${question.correctOption}',
+                          )
+                        : question.explanation,
+                    style: const TextStyle(fontSize: 13.5, height: 1.4),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+          FilledButton(
+            onPressed: onNext,
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              minimumSize: const Size.fromHeight(50),
+            ),
+            child: Text(
+              isLast
+                  ? l.t('Нәтижені көру', 'Посмотреть результат')
+                  : l.t('Әрі қарай', 'Дальше'),
+            ),
+          ),
         ],
       ],
     );
@@ -158,17 +225,28 @@ class _Question extends StatelessWidget {
 }
 
 class _Option extends StatelessWidget {
-  const _Option({required this.text, required this.onTap});
+  const _Option({
+    required this.text,
+    required this.revealed,
+    required this.correct,
+    required this.chosen,
+    required this.onTap,
+  });
 
   final String text;
-  final VoidCallback onTap;
+  final bool revealed;
+  final bool correct;
+  final bool chosen;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final highlight = revealed && (correct || chosen);
+    final color = correct ? AppColors.success : AppColors.danger;
 
     return Material(
-      color: theme.cardColor,
+      color: highlight ? color.withValues(alpha: 0.12) : theme.cardColor,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
@@ -177,11 +255,32 @@ class _Option extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: theme.dividerColor),
+            border: Border.all(
+              color: highlight ? color : theme.dividerColor,
+              width: highlight ? 1.6 : 1,
+            ),
           ),
-          child: Text(
-            text,
-            style: const TextStyle(fontSize: 15, height: 1.3),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  text,
+                  style: TextStyle(
+                    fontSize: 15,
+                    height: 1.3,
+                    fontWeight: highlight ? FontWeight.w600 : FontWeight.w400,
+                  ),
+                ),
+              ),
+              if (highlight) ...[
+                const SizedBox(width: 10),
+                Icon(
+                  correct ? Icons.check_circle : Icons.cancel,
+                  size: 20,
+                  color: color,
+                ),
+              ],
+            ],
           ),
         ),
       ),
