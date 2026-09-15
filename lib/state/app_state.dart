@@ -436,6 +436,18 @@ class AppState extends ChangeNotifier {
       finished.score,
       finished.answeredCount,
     );
+
+    final percent = (finished.percent * 100).round();
+    await pushNotification(
+      type: NotificationType.quiz,
+      title: _l.t('Тест аяқталды', 'Тест пройден'),
+      body: _l.t(
+        '${finished.topic}: ${finished.score}/${finished.answeredCount} '
+            '($percent%).',
+        '${finished.topic}: ${finished.score} из ${finished.answeredCount} '
+            '($percent%).',
+      ),
+    );
   }
 
   void closeQuiz() {

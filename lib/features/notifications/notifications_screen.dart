@@ -30,6 +30,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         NotificationType.deadline => AppColors.danger,
         NotificationType.streak => AppColors.warning,
         NotificationType.weekly => AppColors.purple,
+        NotificationType.quiz => AppColors.accent,
       };
 
   IconData _iconFor(NotificationType type) => switch (type) {
@@ -38,6 +39,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         NotificationType.deadline => Icons.timer_off,
         NotificationType.streak => Icons.local_fire_department,
         NotificationType.weekly => Icons.bar_chart,
+        NotificationType.quiz => Icons.quiz_outlined,
       };
 
   @override

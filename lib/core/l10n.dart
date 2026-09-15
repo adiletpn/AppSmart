@@ -64,6 +64,7 @@ class L10n {
         NotificationType.deadline => t('Дедлайн', 'Дедлайн'),
         NotificationType.streak => t('Серия', 'Серия'),
         NotificationType.weekly => t('Апталық есеп', 'Итоги недели'),
+        NotificationType.quiz => t('Мини-тест', 'Мини-тест'),
       };
 
   List<String> get weekdays => isKz

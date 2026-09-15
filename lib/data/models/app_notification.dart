@@ -1,4 +1,4 @@
-enum NotificationType { reminder, tasksReady, deadline, streak, weekly }
+enum NotificationType { reminder, tasksReady, deadline, streak, weekly, quiz }
 
 class AppNotification {
   final String id;
