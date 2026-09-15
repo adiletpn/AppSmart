@@ -1,3 +1,17 @@
+class TaskExample {
+  final String input;
+  final String output;
+
+  const TaskExample({required this.input, required this.output});
+
+  Map<String, dynamic> toJson() => {'input': input, 'output': output};
+
+  factory TaskExample.fromJson(Map<String, dynamic> json) => TaskExample(
+        input: json['input'] as String? ?? '',
+        output: json['output'] as String? ?? '',
+      );
+}
+
 enum TaskDifficulty { easy, medium, hard }
 
 extension TaskDifficultyX on TaskDifficulty {
@@ -26,6 +40,10 @@ class StudyTask {
   final String? startTime;
   final int spentSeconds;
   final DateTime? startedAt;
+  final String statement;
+  final List<TaskExample> examples;
+  final String hint;
+  final String solution;
 
   const StudyTask({
     required this.id,
@@ -43,9 +61,19 @@ class StudyTask {
     this.startTime,
     this.spentSeconds = 0,
     this.startedAt,
+    this.statement = '',
+    this.examples = const [],
+    this.hint = '',
+    this.solution = '',
   });
 
   bool get isDone => status == TaskStatus.done;
+
+  bool get hasStatement => statement.trim().isNotEmpty;
+
+  bool get hasHint => hint.trim().isNotEmpty;
+
+  bool get hasSolution => solution.trim().isNotEmpty;
 
   bool get isRunning => startedAt != null;
 
@@ -68,6 +96,10 @@ class StudyTask {
     String? startTime,
     int? spentSeconds,
     DateTime? startedAt,
+    String? statement,
+    List<TaskExample>? examples,
+    String? hint,
+    String? solution,
     bool clearCompletedAt = false,
     bool clearStartedAt = false,
   }) =>
@@ -87,6 +119,10 @@ class StudyTask {
         startTime: startTime ?? this.startTime,
         spentSeconds: spentSeconds ?? this.spentSeconds,
         startedAt: clearStartedAt ? null : (startedAt ?? this.startedAt),
+        statement: statement ?? this.statement,
+        examples: examples ?? this.examples,
+        hint: hint ?? this.hint,
+        solution: solution ?? this.solution,
       );
 
   Map<String, dynamic> toJson() => {
@@ -105,6 +141,10 @@ class StudyTask {
         'startTime': startTime,
         'spentSeconds': spentSeconds,
         'startedAt': startedAt?.toIso8601String(),
+        'statement': statement,
+        'examples': examples.map((e) => e.toJson()).toList(),
+        'hint': hint,
+        'solution': solution,
       };
 
   factory StudyTask.fromJson(Map<String, dynamic> json) => StudyTask(
@@ -131,5 +171,13 @@ class StudyTask {
         startTime: json['startTime'] as String?,
         spentSeconds: json['spentSeconds'] as int? ?? 0,
         startedAt: DateTime.tryParse(json['startedAt'] as String? ?? ''),
+        statement: json['statement'] as String? ?? '',
+        examples: (json['examples'] as List?)
+                ?.whereType<Map>()
+                .map((e) => TaskExample.fromJson(e.cast<String, dynamic>()))
+                .toList() ??
+            const [],
+        hint: json['hint'] as String? ?? '',
+        solution: json['solution'] as String? ?? '',
       );
 }

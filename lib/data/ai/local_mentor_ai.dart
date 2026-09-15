@@ -13,6 +13,7 @@ import 'free_time_engine.dart';
 import 'mentor_ai.dart';
 import 'pace_analyzer.dart';
 import 'question_bank.dart';
+import 'task_content_bank.dart';
 import 'topic_catalog.dart';
 
 class LocalMentorAi implements MentorAi {
@@ -160,6 +161,7 @@ class LocalMentorAi implements MentorAi {
       final duration = _durationFor(difficulty, kind);
       if (spent + duration > budget && tasks.isNotEmpty) break;
 
+      final content = _contentFor(kind, topic, isKz);
       tasks.add(StudyTask(
         id: _uuid.v4(),
         userId: user.id,
@@ -171,11 +173,22 @@ class LocalMentorAi implements MentorAi {
         date: day,
         deadline: deadline,
         createdAt: DateTime.now(),
+        statement: content?.statement ?? '',
+        examples: content?.examples ?? const [],
+        hint: content?.hint ?? '',
+        solution: content?.solution ?? '',
       ));
       spent += duration;
       index++;
     }
     return tasks;
+  }
+
+  /// Шарты бар нақты есеп тек практикалық тапсырмаларға тіркеледі:
+  /// теория мен тестке есеп мәтіні қажет емес.
+  TaskContent? _contentFor(String kind, Topic topic, bool isKz) {
+    if (kind != 'practice' && kind != 'contest') return null;
+    return TaskContentBank.forTopic(topic.id, isKz: isKz);
   }
 
   List<String> _kindOrder(TaskDifficulty base) => switch (base) {
