@@ -6,6 +6,7 @@ import '../../core/app_colors.dart';
 import '../../core/l10n.dart';
 import '../../state/app_state.dart';
 import '../quiz/quiz_screen.dart';
+import '../topics/topics_screen.dart';
 import '../../widgets/gradient_card.dart';
 import '../../widgets/progress_ring.dart';
 import '../../widgets/section_header.dart';
@@ -275,6 +276,10 @@ class ProgressScreen extends StatelessWidget {
               title: l.t('Тақырыптар бойынша', 'По темам'),
               subtitle: l.t('Тест тапсыру үшін тақырыпты бас',
                   'Нажми на тему, чтобы пройти тест'),
+              actionLabel: l.t('Барлығы', 'Все темы'),
+              onAction: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const TopicsScreen()),
+              ),
             ),
             if (topics.isEmpty)
               SurfaceCard(

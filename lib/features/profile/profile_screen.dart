@@ -11,6 +11,7 @@ import '../notifications/notifications_screen.dart';
 import '../profile_setup/profile_setup_screen.dart';
 import '../progress/report_screen.dart';
 import '../progress/statistics_screen.dart';
+import '../topics/topics_screen.dart';
 import '../settings/settings_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -136,6 +137,13 @@ class ProfileScreen extends StatelessWidget {
               title: l.t('Статистика', 'Статистика'),
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const StatisticsScreen()),
+              ),
+            ),
+            _MenuTile(
+              icon: Icons.menu_book_outlined,
+              title: l.t('Тақырыптар', 'Темы'),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const TopicsScreen()),
               ),
             ),
             _MenuTile(
