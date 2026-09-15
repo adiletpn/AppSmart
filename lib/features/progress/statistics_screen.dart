@@ -12,6 +12,12 @@ import '../../widgets/section_header.dart';
 class StatisticsScreen extends StatelessWidget {
   const StatisticsScreen({super.key});
 
+  /// Тақырып аты диаграммаға сыймайды — бірінші сөзін ғана қалдырамыз.
+  static String _shortName(String name) {
+    final first = name.split(' ').first;
+    return first.length <= 12 ? first : '${first.substring(0, 11)}…';
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = context.l;
@@ -20,6 +26,11 @@ class StatisticsScreen extends StatelessWidget {
     final tests = app.tests.reversed.toList();
     final weak = stats.weakTopics;
     final strong = stats.strongTopics;
+
+    // Ең көп кездескен тақырыптар: диаграммада 6-дан артық баған оқылмайды.
+    final byTopic = stats.topicScores.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final chartTopics = byTopic.take(6).toList();
 
     return Scaffold(
       appBar: AppBar(title: Text(l.t('Статистика', 'Статистика'))),
@@ -102,6 +113,96 @@ class StatisticsScreen extends StatelessWidget {
                   ),
                 ),
               ),
+            if (chartTopics.isNotEmpty) ...[
+              const SizedBox(height: 24),
+              SectionHeader(
+                title: l.t('Тақырыптар бойынша', 'По темам'),
+                subtitle: l.t('Меңгеру пайызы', 'Процент освоения'),
+              ),
+              SurfaceCard(
+                padding: const EdgeInsets.fromLTRB(8, 20, 16, 12),
+                child: SizedBox(
+                  height: 190,
+                  child: BarChart(
+                    BarChartData(
+                      maxY: 100,
+                      alignment: BarChartAlignment.spaceAround,
+                      borderData: FlBorderData(show: false),
+                      gridData: FlGridData(
+                        show: true,
+                        drawVerticalLine: false,
+                        horizontalInterval: 25,
+                        getDrawingHorizontalLine: (_) => FlLine(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.08),
+                          strokeWidth: 1,
+                        ),
+                      ),
+                      titlesData: FlTitlesData(
+                        topTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        rightTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            interval: 25,
+                            reservedSize: 34,
+                            getTitlesWidget: (value, _) => Text(
+                              '${value.round()}%',
+                              style: const TextStyle(fontSize: 10),
+                            ),
+                          ),
+                        ),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 42,
+                            getTitlesWidget: (value, _) {
+                              final index = value.round();
+                              if (index < 0 || index >= chartTopics.length) {
+                                return const SizedBox.shrink();
+                              }
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 6),
+                                child: Text(
+                                  _shortName(chartTopics[index].key),
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontSize: 9.5,
+                                    height: 1.2,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                      barGroups: [
+                        for (var i = 0; i < chartTopics.length; i++)
+                          BarChartGroupData(
+                            x: i,
+                            barRods: [
+                              BarChartRodData(
+                                toY: chartTopics[i].value * 100,
+                                width: 18,
+                                borderRadius: BorderRadius.circular(6),
+                                color: chartTopics[i].value >= 0.7
+                                    ? AppColors.success
+                                    : AppColors.warning,
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 24),
             SectionHeader(title: l.t('Күшейту қажет', 'Требует внимания')),
             if (weak.isEmpty)
