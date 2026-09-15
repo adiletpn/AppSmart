@@ -13,6 +13,7 @@ import 'free_time_engine.dart';
 import 'mentor_ai.dart';
 import 'pace_analyzer.dart';
 import 'question_bank.dart';
+import 'review_planner.dart';
 import 'task_content_bank.dart';
 import 'topic_catalog.dart';
 
@@ -76,10 +77,15 @@ class LocalMentorAi implements MentorAi {
     DateTime date,
   ) {
     final pool = TopicCatalog.forLevel(user.level);
-    final weak = stats.weakTopics
-        .map((e) => TopicCatalog.byName(e.key))
-        .whereType<Topic>()
-        .toList();
+
+    // Қайталау мерзімі жеткен тақырыптар бірінші кезекте тұрады: нәтижесі
+    // нашар тақырып үш күнде, меңгерілгені үш аптада ғана оралады.
+    final due = ReviewPlanner.due(
+      pool: pool,
+      topicScores: stats.topicScores,
+      history: history,
+      date: date,
+    ).map((item) => item.topic).toList();
 
     final recent = history
         .where((t) => date.difference(t.date).inDays.abs() <= 4)
@@ -95,7 +101,7 @@ class LocalMentorAi implements MentorAi {
 
     final seed = date.year * 10000 + date.month * 100 + date.day;
     final random = Random(seed);
-    final ordered = <Topic>[...weak];
+    final ordered = <Topic>[...due];
     for (final list in [focus, fresh, pool]) {
       final copy = [...list]..shuffle(random);
       for (final topic in copy) {
