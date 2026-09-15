@@ -131,4 +131,83 @@ void main() {
 
     expect(items.firstWhere((i) => i.topic.id == 'loops').isNew, isTrue);
   });
+
+  ReviewItem status(String topic, {double? score, List<StudyTask>? history}) =>
+      ReviewPlanner.statusFor(
+        topic: TopicCatalog.byName(topic)!,
+        topicScores: score == null ? const {} : {loops.ru: score},
+        history: history ?? const [],
+        date: today,
+      );
+
+  test('нетронутая тема считается готовой к изучению', () {
+    final item = status('loops');
+
+    expect(item.isNew, isTrue);
+    expect(item.isDue, isTrue);
+    expect(item.daysLeft, 0);
+    expect(item.lastSeen, isNull);
+  });
+
+  test('до срока повторения видно, сколько дней осталось', () {
+    final item = status(
+      'loops',
+      score: 0.9,
+      history: [done(loops.ru, today.subtract(const Duration(days: 5)))],
+    );
+
+    expect(item.isDue, isFalse);
+    expect(item.interval, ReviewPlanner.strongIntervalDays);
+    expect(item.daysLeft, 16);
+    expect(item.overdueDays, -16);
+  });
+
+  test('в день срока тема становится готовой, а осталось ноль', () {
+    final item = status(
+      'loops',
+      score: 0.3,
+      history: [done(loops.ru, today.subtract(const Duration(days: 3)))],
+    );
+
+    expect(item.isDue, isTrue);
+    expect(item.daysLeft, 0);
+    expect(item.overdueDays, 0);
+  });
+
+  test('просрочка считается в днях сверх интервала', () {
+    final item = status(
+      'loops',
+      score: 0.3,
+      history: [done(loops.ru, today.subtract(const Duration(days: 11)))],
+    );
+
+    expect(item.overdueDays, 8);
+    expect(item.daysLeft, 0);
+    expect(item.lastSeen, today.subtract(const Duration(days: 11)));
+  });
+
+  test('статус и список готовых к повторению не расходятся', () {
+    final history = [
+      done(loops.ru, today.subtract(const Duration(days: 5))),
+      done(arrays.ru, today.subtract(const Duration(days: 1))),
+    ];
+    final scores = {loops.ru: 0.3, arrays.ru: 0.3};
+
+    final ready = ReviewPlanner.due(
+      pool: pool,
+      topicScores: scores,
+      history: history,
+      date: today,
+    ).map((i) => i.topic.id).toSet();
+
+    for (final topic in pool) {
+      final item = ReviewPlanner.statusFor(
+        topic: topic,
+        topicScores: scores,
+        history: history,
+        date: today,
+      );
+      expect(item.isDue, ready.contains(topic.id), reason: topic.id);
+    }
+  });
 }
