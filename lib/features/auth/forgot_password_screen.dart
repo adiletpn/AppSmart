@@ -17,7 +17,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _email = TextEditingController();
   bool _loading = false;
-  bool _sent = false;
+  String? _sentTo;
 
   @override
   void dispose() {
@@ -33,7 +33,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     final messenger = ScaffoldMessenger.of(context);
     try {
       await app.resetPassword(_email.text);
-      setState(() => _sent = true);
+      setState(() => _sentTo = _email.text.trim().toLowerCase());
     } on AuthException catch (error) {
       messenger.showSnackBar(
         SnackBar(content: Text(l.t(error.messageKz, error.messageRu))),
@@ -62,19 +62,33 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  _sent
+                  _sentTo == null
                       ? l.t(
-                          'Поштаңа сілтеме жіберілді. Ашып, жаңа құпиясөз орнат.',
-                          'Ссылка отправлена на почту. Открой её и задай новый пароль.',
-                        )
-                      : l.t(
                           'Email-іңді жаз — жаңа құпиясөз орнатуға сілтеме жібереміз.',
                           'Укажи email — пришлём ссылку для смены пароля.',
+                        )
+                      : l.t(
+                          'Егер $_sentTo тіркелген болса, сол поштаға сілтеме '
+                              'жіберілді. Ашып, жаңа құпиясөз орнат.',
+                          'Если адрес $_sentTo зарегистрирован, ссылка отправлена '
+                              'на него. Открой её и задай новый пароль.',
                         ),
                   style: TextStyle(fontSize: 14, height: 1.45, color: muted),
                 ),
+                if (_sentTo != null) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    l.t(
+                      'Хат бірнеше минутқа дейін келуі мүмкін. «Спам» бумасын '
+                          'да тексер — жіберуші noreply@smartmentor-26ab4.firebaseapp.com.',
+                      'Письмо может идти несколько минут. Проверь и папку «Спам» — '
+                          'отправитель noreply@smartmentor-26ab4.firebaseapp.com.',
+                    ),
+                    style: TextStyle(fontSize: 13, height: 1.45, color: muted),
+                  ),
+                ],
                 const SizedBox(height: 26),
-                if (!_sent) ...[
+                if (_sentTo == null) ...[
                   PrimaryField(
                     controller: _email,
                     label: 'Email',
@@ -104,10 +118,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         : Text(l.t('Сілтеме жіберу', 'Отправить ссылку')),
                   ),
                 ] else ...[
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 24),
                   FilledButton(
                     onPressed: () => Navigator.of(context).pop(),
                     child: Text(l.t('Кіру бетіне оралу', 'Вернуться ко входу')),
+                  ),
+                  const SizedBox(height: 10),
+                  TextButton(
+                    onPressed: () => setState(() => _sentTo = null),
+                    child: Text(
+                      l.t('Басқа email жазу', 'Указать другой email'),
+                    ),
                   ),
                 ],
               ],
