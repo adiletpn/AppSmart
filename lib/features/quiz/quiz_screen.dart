@@ -34,9 +34,14 @@ class _QuizScreenState extends State<QuizScreen> {
     });
   }
 
+  /// Тестті ортасында тастап кетсе де, жауап берілген сұрақтар прогреске
+  /// жазылады — әйтпесе оқушының нақты нәтижесі жоғалып кетеді.
   @override
   void dispose() {
-    WidgetsBinding.instance.addPostFrameCallback((_) => _app.closeQuiz());
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _app.finishQuiz();
+      _app.closeQuiz();
+    });
     super.dispose();
   }
 
