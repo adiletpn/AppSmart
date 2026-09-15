@@ -163,4 +163,96 @@ void main() {
     expect(report, contains('09.03.2026'));
     expect(report, contains('Массивы — 7/10'));
   });
+
+  test('в отчёте видно, сколько тем охвачено', () {
+    final report = ProgressReport.build(
+      user: buildUser(),
+      stats: const ProgressStats(topicScores: {'Циклы': 0.4, 'Рекурсия': 0.9}),
+      tasks: const [],
+      tests: const [],
+      l: l,
+      now: now,
+    );
+
+    expect(report, contains('Охвачено тем: 2 / 20'));
+  });
+
+  test('раздел повторения показывает просроченные темы', () {
+    final old = StudyTask(
+      id: 'old',
+      userId: 'u1',
+      title: 'Циклы: практика',
+      description: '',
+      topic: 'Циклы',
+      difficulty: TaskDifficulty.medium,
+      durationMinutes: 30,
+      date: now.subtract(const Duration(days: 12)),
+      deadline: now,
+      createdAt: now,
+      status: TaskStatus.done,
+    );
+
+    final report = ProgressReport.build(
+      user: buildUser(),
+      stats: const ProgressStats(topicScores: {'Циклы': 0.3}),
+      tasks: [old],
+      tests: const [],
+      l: l,
+      now: now,
+    );
+
+    expect(report, contains('ПОРА ПОВТОРИТЬ'));
+    expect(report, contains('Циклы'));
+    expect(report, contains('просрочено на 9 дн.'));
+  });
+
+  test('освоенная тема в раздел повторения не попадает', () {
+    final recent = buildTask(title: 'Циклы: практика');
+
+    final report = ProgressReport.build(
+      user: buildUser(),
+      stats: const ProgressStats(topicScores: {'Циклы': 0.95}),
+      tasks: [recent],
+      tests: const [],
+      l: l,
+      now: now,
+    );
+
+    expect(report, isNot(contains('ПОРА ПОВТОРИТЬ')));
+  });
+
+  test('новая тема в раздел повторения не попадает', () {
+    final report = ProgressReport.build(
+      user: buildUser(),
+      stats: const ProgressStats(),
+      tasks: const [],
+      tests: const [],
+      l: l,
+      now: now,
+    );
+
+    expect(report, isNot(contains('ПОРА ПОВТОРИТЬ')));
+  });
+
+  test('число пройденных тестов печатается', () {
+    final report = ProgressReport.build(
+      user: buildUser(),
+      stats: const ProgressStats(testAverage: 0.8),
+      tasks: const [],
+      tests: [
+        TestResult(
+          id: 't1',
+          userId: 'u1',
+          topic: 'Циклы',
+          score: 4,
+          total: 5,
+          date: now,
+        ),
+      ],
+      l: l,
+      now: now,
+    );
+
+    expect(report, contains('Пройдено тестов: 1'));
+  });
 }

@@ -1,4 +1,6 @@
 import '../../core/l10n.dart';
+import '../ai/review_planner.dart';
+import '../ai/topic_catalog.dart';
 import '../models/app_user.dart';
 import '../models/progress_stats.dart';
 import '../models/study_task.dart';
@@ -58,7 +60,20 @@ class ProgressReport {
         '${l.t('Тест орташасы', 'Средний балл тестов')}: '
         '${(stats.testAverage * 100).round()}%',
       );
+      lines.add(
+        '${l.t('Тапсырылған тест', 'Пройдено тестов')}: ${tests.length}',
+      );
     }
+
+    final pool = TopicCatalog.forLevel(user.level);
+    final touched = pool
+        .where((t) =>
+            stats.topicScores.containsKey(t.kk) ||
+            stats.topicScores.containsKey(t.ru))
+        .length;
+    lines.add(
+      '${l.t('Қамтылған тақырып', 'Охвачено тем')}: $touched / ${pool.length}',
+    );
     lines.add('');
 
     final strong = stats.strongTopics;
@@ -86,6 +101,27 @@ class ProgressReport {
         lines.add(
           '  ${l.shortDate(test.date)}  ${test.topic} — '
           '${test.score}/${test.total}',
+        );
+      }
+      lines.add('');
+    }
+
+    final review = ReviewPlanner.due(
+      pool: pool,
+      topicScores: stats.topicScores,
+      history: tasks,
+      date: now,
+    ).where((item) => !item.isNew).toList();
+    if (review.isNotEmpty) {
+      lines.add(l.t('ҚАЙТАЛАУ ҚАЖЕТ', 'ПОРА ПОВТОРИТЬ'));
+      for (final item in review.take(5)) {
+        final overdue = item.overdueDays > 0
+            ? ' · ${l.t('${item.overdueDays} күн кешікті', 'просрочено на ${item.overdueDays} дн.')}'
+            : '';
+        lines.add(
+          '  ${item.topic.name(l.isKz)} — '
+          '${l.t('соңғы рет', 'последний раз')} '
+          '${l.shortDate(item.lastSeen!)}$overdue',
         );
       }
       lines.add('');
