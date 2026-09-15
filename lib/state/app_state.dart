@@ -401,23 +401,41 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  void answerQuiz(int option) {
+  Future<void> answerQuiz(int option) async {
     final attempt = _quiz;
     if (attempt == null || attempt.isFinished) return;
 
     final answered = attempt.answer(attempt.currentIndex, option);
     if (identical(answered, attempt)) return;
 
-    _quiz = answered.isComplete ? answered.finish(DateTime.now()) : answered;
+    if (answered.isComplete) {
+      await _completeQuiz(answered);
+      return;
+    }
+    _quiz = answered;
     notifyListeners();
   }
 
-  void finishQuiz() {
+  Future<void> finishQuiz() async {
     final attempt = _quiz;
     if (attempt == null || attempt.isFinished) return;
 
-    _quiz = attempt.finish(DateTime.now());
+    await _completeQuiz(attempt);
+  }
+
+  /// Жауап берілген сұрақтар ғана есепке алынады: тестті жартылай тастап
+  /// кеткені үшін тақырып әлсіз деп белгіленбеуі керек.
+  Future<void> _completeQuiz(QuizAttempt attempt) async {
+    final finished = attempt.finish(DateTime.now());
+    _quiz = finished;
     notifyListeners();
+
+    if (finished.answeredCount == 0) return;
+    await addTestResult(
+      finished.topic,
+      finished.score,
+      finished.answeredCount,
+    );
   }
 
   void closeQuiz() {
