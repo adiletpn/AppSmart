@@ -130,27 +130,17 @@ class _Question extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
       children: [
+        _Progress(l: l, attempt: attempt, index: index),
+        const SizedBox(height: 16),
         GradientCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Text(
-                    '${index + 1} / ${attempt.total}',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    question.topic,
-                    style: const TextStyle(fontSize: 13),
-                  ),
-                ],
+              Text(
+                question.topic,
+                style: const TextStyle(fontSize: 13),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
               Text(
                 question.prompt,
                 style: const TextStyle(
@@ -219,6 +209,70 @@ class _Question extends StatelessWidget {
             ),
           ),
         ],
+      ],
+    );
+  }
+}
+
+class _Progress extends StatelessWidget {
+  const _Progress({
+    required this.l,
+    required this.attempt,
+    required this.index,
+  });
+
+  final L10n l;
+  final QuizAttempt attempt;
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final done = attempt.answeredCount;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              l.t(
+                '${index + 1}-сұрақ, барлығы ${attempt.total}',
+                'Вопрос ${index + 1} из ${attempt.total}',
+              ),
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: theme.textTheme.bodySmall?.color,
+              ),
+            ),
+            const Spacer(),
+            if (done > 0)
+              Text(
+                l.t(
+                  'Дұрыс: ${attempt.score}/$done',
+                  'Верно: ${attempt.score} из $done',
+                ),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: attempt.score == done
+                      ? AppColors.success
+                      : theme.textTheme.bodySmall?.color,
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: LinearProgressIndicator(
+            value: attempt.total == 0 ? 0 : done / attempt.total,
+            minHeight: 7,
+            backgroundColor: theme.dividerColor,
+            valueColor: const AlwaysStoppedAnimation(AppColors.primary),
+          ),
+        ),
       ],
     );
   }
