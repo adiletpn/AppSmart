@@ -28,7 +28,7 @@ class SyncBanner extends StatelessWidget {
           border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Icon(
               offline ? Icons.cloud_off : Icons.cloud_sync_outlined,
@@ -68,6 +68,21 @@ class SyncBanner extends StatelessWidget {
                 ],
               ),
             ),
+            if (offline) ...[
+              const SizedBox(width: 8),
+              app.syncing
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2.2),
+                    )
+                  : IconButton(
+                      onPressed: app.retrySync,
+                      tooltip: l.t('Қайталау', 'Повторить'),
+                      visualDensity: VisualDensity.compact,
+                      icon: Icon(Icons.refresh, size: 20, color: color),
+                    ),
+            ],
           ],
         ),
       ),

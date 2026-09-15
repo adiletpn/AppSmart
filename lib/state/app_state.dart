@@ -64,6 +64,7 @@ class AppState extends ChangeNotifier {
   QuizAttempt? _quiz;
   bool _quizLoading = false;
   bool _offline = false;
+  bool _syncing = false;
   StreamSubscription<bool>? _pendingSub;
 
   AppUser? get user => _user;
@@ -87,6 +88,9 @@ class AppState extends ChangeNotifier {
 
   bool get showSyncBanner => _offline || hasUnsyncedChanges;
 
+  /// Серверден қайта оқу жүріп жатыр.
+  bool get syncing => _syncing;
+
   void configure({required MentorAi ai, required bool isKz}) {
     final languageChanged = _isKz != isKz;
     _ai = ai;
@@ -103,8 +107,11 @@ class AppState extends ChangeNotifier {
   L10n get _l => L10n(_isKz ? AppLang.kk : AppLang.ru);
 
   void _watchPendingWrites() {
-    _pendingSub ??= FirestoreService.pendingChanges.listen((_) {
+    _pendingSub ??= FirestoreService.pendingChanges.listen((pending) {
       notifyListeners();
+      // Кезек босады дегеніміз — жазу серверге жетті, яғни байланыс бар.
+      // Оқу сәтсіз болып қалған болса, дәл осы сәтте қайталап көреміз.
+      if (!pending && _offline) unawaited(retrySync());
     });
   }
 
@@ -137,6 +144,11 @@ class AppState extends ChangeNotifier {
       notifyListeners();
     }
 
+    await _fetchFromServer(id);
+    unawaited(_registerPushToken(id));
+  }
+
+  Future<void> _fetchFromServer(String id) async {
     try {
       final loaded = await Future.wait([
         tasksRepo.all(id),
@@ -157,9 +169,22 @@ class AppState extends ChangeNotifier {
       // Сервер қолжетімсіз: құрылғыдағы көшірмемен жұмысты жалғастырамыз.
       _offline = true;
     }
-
     _syncMissedTasks();
-    unawaited(_registerPushToken(id));
+  }
+
+  /// Байланыс қалпына келгенде немесе оқушы өзі сұрағанда серверден қайта оқу.
+  Future<void> retrySync() async {
+    final user = _user;
+    if (user == null || _syncing) return;
+
+    _syncing = true;
+    notifyListeners();
+    try {
+      await _fetchFromServer(user.id);
+    } finally {
+      _syncing = false;
+      notifyListeners();
+    }
   }
 
   Future<void> _saveCache() async {
