@@ -371,8 +371,8 @@ class AppState extends ChangeNotifier {
       total: total,
       date: DateTime.now(),
     ));
-    await progressRepo.saveAll(user.id, _tests);
     notifyListeners();
+    await progressRepo.saveAll(user.id, _tests);
   }
 
   Future<void> startQuiz(String topicId) async {
@@ -494,8 +494,8 @@ class AppState extends ChangeNotifier {
     final user = _user;
     if (user == null) return;
     _messages = [];
-    await chatRepo.saveAll(user.id, _messages);
     notifyListeners();
+    await chatRepo.saveAll(user.id, _messages);
   }
 
   Future<void> pushNotification({
@@ -519,8 +519,8 @@ class AppState extends ChangeNotifier {
     if (_notifications.length > 50) {
       _notifications = _notifications.take(50).toList();
     }
-    await notificationsRepo.saveAll(user.id, _notifications);
     notifyListeners();
+    await notificationsRepo.saveAll(user.id, _notifications);
   }
 
   Future<void> scheduleDeviceNotifications({
@@ -637,16 +637,16 @@ class AppState extends ChangeNotifier {
     if (user == null) return;
     _notifications =
         _notifications.map((n) => n.copyWith(read: true)).toList();
-    await notificationsRepo.saveAll(user.id, _notifications);
     notifyListeners();
+    await notificationsRepo.saveAll(user.id, _notifications);
   }
 
   Future<void> clearNotifications() async {
     final user = _user;
     if (user == null) return;
     _notifications = [];
-    await notificationsRepo.saveAll(user.id, _notifications);
     notifyListeners();
+    await notificationsRepo.saveAll(user.id, _notifications);
   }
 
   ProgressStats get stats {
@@ -703,18 +703,20 @@ class AppState extends ChangeNotifier {
     );
   }
 
+  /// Экран бірден жаңарады, сақтау содан кейін жүреді: байланыс баяу болса да
+  /// оқушы басқан әрекет сол сәтте көрінуі керек.
   Future<void> _persistTasks() async {
     final user = _user;
     if (user == null) return;
-    await tasksRepo.saveAll(user.id, _tasks);
     notifyListeners();
+    await tasksRepo.saveAll(user.id, _tasks);
   }
 
   Future<void> _persistSchedule() async {
     final user = _user;
     if (user == null) return;
-    await scheduleRepo.saveAll(user.id, _schedule);
     notifyListeners();
+    await scheduleRepo.saveAll(user.id, _schedule);
   }
 
   Future<void> wipeData() async {

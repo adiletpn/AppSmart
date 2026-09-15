@@ -1,9 +1,20 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class FirestoreService {
   FirestoreService._();
 
   static final FirebaseFirestore db = FirebaseFirestore.instance;
+
+  /// Соңғы жазу серверге жеткен-жетпегенін білдіреді.
+  static bool get hasPendingWrites => _pending > 0;
+
+  static int _pending = 0;
+
+  static final _pendingChanges = StreamController<bool>.broadcast();
+
+  static Stream<bool> get pendingChanges => _pendingChanges.stream;
 
   static CollectionReference<Map<String, dynamic>> users() =>
       db.collection('users');
@@ -41,7 +52,7 @@ class FirestoreService {
     for (final item in items) {
       batch.set(ref.doc(item['id'] as String), item);
     }
-    await batch.commit();
+    _commit(batch);
   }
 
   static Future<void> deleteAll(String userId, String name) async {
@@ -50,6 +61,18 @@ class FirestoreService {
     for (final doc in snapshot.docs) {
       batch.delete(doc.reference);
     }
-    await batch.commit();
+    _commit(batch);
+  }
+
+  /// Firestore жазуды жергілікті кэшке бірден қолданады, ал commit() тек
+  /// сервер жауап бергенде аяқталады. Байланыс жоқта оны күтсек, қосымша
+  /// қатып қалады — сондықтан күтпейміз, тек жеткенін белгілеп отырамыз.
+  static void _commit(WriteBatch batch) {
+    _pending++;
+    _pendingChanges.add(true);
+    batch.commit().whenComplete(() {
+      _pending--;
+      _pendingChanges.add(hasPendingWrites);
+    }).ignore();
   }
 }
