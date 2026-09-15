@@ -2,10 +2,8 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:http/http.dart' as http;
-import 'package:uuid/uuid.dart';
 
 import '../../core/l10n.dart';
-import '../../core/time_utils.dart';
 import '../models/app_user.dart';
 import '../models/chat_message.dart';
 import '../models/progress_stats.dart';
@@ -15,6 +13,7 @@ import 'local_mentor_ai.dart';
 import 'mentor_ai.dart';
 import 'pace_analyzer.dart';
 import 'quiz_parser.dart';
+import 'task_parser.dart';
 import 'topic_catalog.dart';
 
 class _ModelOption {
@@ -36,7 +35,6 @@ class GeminiMentorAi implements MentorAi {
   ];
 
   static const _fallback = LocalMentorAi();
-  static const _uuid = Uuid();
   static int _preferred = 0;
 
   Uri _endpoint(String model) => Uri.parse(
@@ -182,12 +180,21 @@ ${_paceHint(pace)}
 Соңғы күндері берілген тапсырмалар: ${recent.isEmpty ? 'жоқ' : recent}.
 
 3-5 тапсырма құрастыр. Жалпы уақыты $budget минуттан аспасын.
-Формат: [{"title":"","description":"","topic":"","difficulty":"easy|medium|hard","minutes":25}]
+Практикалық тапсырмаларға нақты есеп шарты (statement), 1-2 кіріс-шығыс мысалы
+(examples), бағыт беретін кеңес (hint) және шешімнің қысқаша талдауы (solution)
+қоса жаз. Теория мен тестке бұл өрістерді бос қалдыр.
+Формат: [{"title":"","description":"","topic":"","difficulty":"easy|medium|hard",
+"minutes":25,"statement":"","examples":[{"input":"","output":""}],"hint":"","solution":""}]
 ''',
-      maxTokens: 1200,
+      maxTokens: 2400,
     );
 
-    final tasks = _parseTasks(answer, user, date, budget);
+    final tasks = TaskParser.parse(
+      answer,
+      userId: user.id,
+      date: date,
+      budget: budget,
+    );
     if (tasks.isEmpty) {
       return _fallback.buildDay(
         user: user,
@@ -218,53 +225,6 @@ ${_paceHint(pace)}
       studyMinutes: tasks.fold<int>(0, (sum, t) => sum + t.durationMinutes),
       source: PlanSource.ai,
     );
-  }
-
-  List<StudyTask> _parseTasks(
-    String? answer,
-    AppUser user,
-    DateTime date,
-    int budget,
-  ) {
-    if (answer == null) return [];
-    final start = answer.indexOf('[');
-    final end = answer.lastIndexOf(']');
-    if (start == -1 || end <= start) return [];
-
-    try {
-      final decoded = jsonDecode(answer.substring(start, end + 1));
-      if (decoded is! List) return [];
-      final day = TimeUtils.dayStart(date);
-      final tasks = <StudyTask>[];
-      var spent = 0;
-
-      for (final item in decoded) {
-        if (item is! Map) continue;
-        final title = (item['title'] as String? ?? '').trim();
-        if (title.isEmpty) continue;
-        final minutes = (item['minutes'] as num?)?.round() ?? 30;
-        if (spent + minutes > budget && tasks.isNotEmpty) break;
-        tasks.add(StudyTask(
-          id: _uuid.v4(),
-          userId: user.id,
-          title: title,
-          description: (item['description'] as String? ?? '').trim(),
-          topic: (item['topic'] as String? ?? '').trim(),
-          difficulty: TaskDifficulty.values.firstWhere(
-            (d) => d.name == item['difficulty'],
-            orElse: () => TaskDifficulty.medium,
-          ),
-          durationMinutes: minutes.clamp(10, 120),
-          date: day,
-          deadline: day.add(const Duration(hours: 23, minutes: 59)),
-          createdAt: DateTime.now(),
-        ));
-        spent += minutes;
-      }
-      return tasks;
-    } on Exception {
-      return [];
-    }
   }
 
   @override
