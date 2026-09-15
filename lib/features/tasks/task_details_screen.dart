@@ -8,6 +8,7 @@ import '../../state/app_state.dart';
 import '../../widgets/gradient_card.dart';
 import '../../widgets/pill.dart';
 import '../../widgets/section_header.dart';
+import '../quiz/quiz_screen.dart';
 import 'task_timer.dart';
 
 class TaskDetailsScreen extends StatelessWidget {
@@ -160,6 +161,19 @@ class TaskDetailsScreen extends StatelessWidget {
                   ),
                 ),
             const SizedBox(height: 28),
+            OutlinedButton.icon(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => QuizScreen(topicId: task.topic),
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(50),
+              ),
+              icon: const Icon(Icons.quiz_outlined, size: 18),
+              label: Text(l.t('Тақырып бойынша тест', 'Тест по теме')),
+            ),
+            const SizedBox(height: 12),
             if (task.isDone)
               OutlinedButton.icon(
                 onPressed: () => app.setTaskStatus(task.id, TaskStatus.pending),
