@@ -401,6 +401,25 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  void answerQuiz(int option) {
+    final attempt = _quiz;
+    if (attempt == null || attempt.isFinished) return;
+
+    final answered = attempt.answer(attempt.currentIndex, option);
+    if (identical(answered, attempt)) return;
+
+    _quiz = answered.isComplete ? answered.finish(DateTime.now()) : answered;
+    notifyListeners();
+  }
+
+  void finishQuiz() {
+    final attempt = _quiz;
+    if (attempt == null || attempt.isFinished) return;
+
+    _quiz = attempt.finish(DateTime.now());
+    notifyListeners();
+  }
+
   void closeQuiz() {
     if (_quiz == null) return;
     _quiz = null;
