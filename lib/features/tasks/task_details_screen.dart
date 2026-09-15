@@ -9,6 +9,7 @@ import '../../widgets/gradient_card.dart';
 import '../../widgets/pill.dart';
 import '../../widgets/section_header.dart';
 import '../quiz/quiz_screen.dart';
+import '../topics/topic_detail_screen.dart';
 import 'task_timer.dart';
 
 class TaskDetailsScreen extends StatelessWidget {
@@ -193,17 +194,39 @@ class TaskDetailsScreen extends StatelessWidget {
                   ),
                 ),
             const SizedBox(height: 28),
-            OutlinedButton.icon(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => QuizScreen(topicId: task.topic),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            TopicDetailScreen(topicId: task.topic),
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(50),
+                    ),
+                    icon: const Icon(Icons.menu_book_outlined, size: 18),
+                    label: Text(l.t('Конспект', 'Конспект')),
+                  ),
                 ),
-              ),
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size.fromHeight(50),
-              ),
-              icon: const Icon(Icons.quiz_outlined, size: 18),
-              label: Text(l.t('Тақырып бойынша тест', 'Тест по теме')),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => QuizScreen(topicId: task.topic),
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(50),
+                    ),
+                    icon: const Icon(Icons.quiz_outlined, size: 18),
+                    label: Text(l.t('Тест', 'Тест')),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             if (task.isDone)
