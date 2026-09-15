@@ -108,9 +108,21 @@ void main() {
         isTrue);
   });
 
-  test('тема вне банка не добирается', () {
-    expect(QuestionBank.forTest('dp', isKz: false, count: 5), isEmpty);
+  test('тема вне каталога не добирается', () {
     expect(QuestionBank.forTest('нет такой темы', isKz: false), isEmpty);
+  });
+
+  test('каждая тема каталога покрыта вопросами', () {
+    for (final topic in TopicCatalog.all) {
+      expect(QuestionBank.hasTopic(topic.id), isTrue, reason: topic.id);
+    }
+  });
+
+  test('продвинутая тема тоже даёт полный тест', () {
+    for (final id in ['dp', 'dijkstra', 'segment_tree', 'bitmask']) {
+      expect(QuestionBank.forTest(id, isKz: false, count: 5).length, 5,
+          reason: id);
+    }
   });
 
   test('добор сохраняет верный ответ каждого вопроса', () {
