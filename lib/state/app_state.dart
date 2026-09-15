@@ -63,6 +63,8 @@ class AppState extends ChangeNotifier {
   bool _isKz = true;
   QuizAttempt? _quiz;
   bool _quizLoading = false;
+  bool _offline = false;
+  StreamSubscription<bool>? _pendingSub;
 
   AppUser? get user => _user;
   bool get isLoggedIn => _user != null;
@@ -76,6 +78,14 @@ class AppState extends ChangeNotifier {
   int get unreadCount => _notifications.where((n) => !n.read).length;
   QuizAttempt? get quiz => _quiz;
   bool get quizLoading => _quizLoading;
+
+  /// Серверден дерек оқу сәтсіз аяқталды — құрылғыдағы көшірмемен жұмыс істеп тұрмыз.
+  bool get offline => _offline;
+
+  /// Жазылған, бірақ серверге әлі жетпеген өзгерістер бар.
+  bool get hasUnsyncedChanges => FirestoreService.hasPendingWrites;
+
+  bool get showSyncBanner => _offline || hasUnsyncedChanges;
 
   void configure({required MentorAi ai, required bool isKz}) {
     final languageChanged = _isKz != isKz;
@@ -92,7 +102,20 @@ class AppState extends ChangeNotifier {
 
   L10n get _l => L10n(_isKz ? AppLang.kk : AppLang.ru);
 
+  void _watchPendingWrites() {
+    _pendingSub ??= FirestoreService.pendingChanges.listen((_) {
+      notifyListeners();
+    });
+  }
+
+  @override
+  void dispose() {
+    _pendingSub?.cancel();
+    super.dispose();
+  }
+
   Future<void> bootstrap() async {
+    _watchPendingWrites();
     _user = await auth.currentUser();
     if (_user != null) await _loadUserData();
     notifyListeners();
@@ -114,21 +137,28 @@ class AppState extends ChangeNotifier {
       notifyListeners();
     }
 
-    final loaded = await Future.wait([
-      tasksRepo.all(id),
-      scheduleRepo.all(id),
-      progressRepo.all(id),
-      chatRepo.all(id),
-      notificationsRepo.all(id),
-    ]);
+    try {
+      final loaded = await Future.wait([
+        tasksRepo.all(id),
+        scheduleRepo.all(id),
+        progressRepo.all(id),
+        chatRepo.all(id),
+        notificationsRepo.all(id),
+      ]);
 
-    _tasks = loaded[0] as List<StudyTask>;
-    _schedule = loaded[1] as List<ScheduleItem>;
-    _tests = loaded[2] as List<TestResult>;
-    _messages = loaded[3] as List<ChatMessage>;
-    _notifications = loaded[4] as List<AppNotification>;
+      _tasks = loaded[0] as List<StudyTask>;
+      _schedule = loaded[1] as List<ScheduleItem>;
+      _tests = loaded[2] as List<TestResult>;
+      _messages = loaded[3] as List<ChatMessage>;
+      _notifications = loaded[4] as List<AppNotification>;
+      _offline = false;
+      unawaited(_saveCache());
+    } on Exception {
+      // Сервер қолжетімсіз: құрылғыдағы көшірмемен жұмысты жалғастырамыз.
+      _offline = true;
+    }
+
     _syncMissedTasks();
-    unawaited(_saveCache());
     unawaited(_registerPushToken(id));
   }
 

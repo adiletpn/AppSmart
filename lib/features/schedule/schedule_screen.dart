@@ -7,6 +7,7 @@ import '../../core/l10n.dart';
 import '../../core/time_utils.dart';
 import '../../data/models/schedule_item.dart';
 import '../../state/app_state.dart';
+import '../../widgets/sync_banner.dart';
 import '../../widgets/ai_busy_banner.dart';
 import '../../widgets/ai_fallback_banner.dart';
 import '../../widgets/empty_state.dart';
@@ -95,7 +96,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         child: TimePickerTile(
                           label: l.t('Соңы', 'До'),
                           value: end,
-                          onChanged: (value) => setSheetState(() => end = value),
+                          onChanged: (value) =>
+                              setSheetState(() => end = value),
                         ),
                       ),
                     ],
@@ -151,8 +153,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     final items = app.scheduleFor(_selected);
     final free = app.freeMinutesFor(_selected);
     final tasks = app.tasksFor(_selected);
-    final weekStart =
-        _selected.subtract(Duration(days: _selected.weekday - 1));
+    final weekStart = _selected.subtract(Duration(days: _selected.weekday - 1));
 
     return Scaffold(
       appBar: AppBar(
@@ -292,6 +293,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             ),
             const SizedBox(height: 20),
             const AiBusyBanner(),
+            const SyncBanner(),
             AiFallbackBanner(
               onRetry: () => app.generatePlan(_selected, force: true),
             ),
@@ -316,15 +318,15 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 (item) => Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: SurfaceCard(
-                    onTap: item.manual ? () => _openSlotSheet(item: item) : null,
+                    onTap:
+                        item.manual ? () => _openSlotSheet(item: item) : null,
                     child: Row(
                       children: [
                         Container(
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                            color:
-                                _colorFor(item.type).withValues(alpha: 0.14),
+                            color: _colorFor(item.type).withValues(alpha: 0.14),
                             borderRadius: BorderRadius.circular(14),
                           ),
                           child: Icon(

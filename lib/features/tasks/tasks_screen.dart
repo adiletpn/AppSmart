@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/app_colors.dart';
 import '../../core/l10n.dart';
 import '../../state/app_state.dart';
+import '../../widgets/sync_banner.dart';
 import '../../widgets/ai_busy_banner.dart';
 import '../../widgets/ai_fallback_banner.dart';
 import '../../widgets/empty_state.dart';
@@ -39,8 +40,7 @@ class _TasksScreenState extends State<TasksScreen> {
       l.t('Орындалды', 'Готово'),
     ];
 
-    final minutes =
-        today.fold<int>(0, (sum, t) => sum + t.durationMinutes);
+    final minutes = today.fold<int>(0, (sum, t) => sum + t.durationMinutes);
     final doneMinutes = today
         .where((t) => t.isDone)
         .fold<int>(0, (sum, t) => sum + t.durationMinutes);
@@ -123,6 +123,10 @@ class _TasksScreenState extends State<TasksScreen> {
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 20),
               child: AiBusyBanner(),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              child: SyncBanner(),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),

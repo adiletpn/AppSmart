@@ -6,6 +6,7 @@ import '../../core/l10n.dart';
 import '../../core/time_utils.dart';
 import '../../data/models/schedule_item.dart';
 import '../../state/app_state.dart';
+import '../../widgets/sync_banner.dart';
 import '../../widgets/ai_busy_banner.dart';
 import '../../widgets/ai_fallback_banner.dart';
 import '../../widgets/gradient_card.dart';
@@ -121,6 +122,7 @@ class HomeScreen extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               const AiBusyBanner(),
+              const SyncBanner(),
               AiFallbackBanner(
                 onRetry: () => app.generatePlan(DateTime.now(), force: true),
               ),
@@ -273,7 +275,8 @@ class _AdviceCard extends StatelessWidget {
               gradient: AppColors.cardGradient,
               borderRadius: BorderRadius.circular(14),
             ),
-            child: const Icon(Icons.auto_awesome, color: Colors.white, size: 20),
+            child:
+                const Icon(Icons.auto_awesome, color: Colors.white, size: 20),
           ),
           const SizedBox(width: 14),
           Expanded(
