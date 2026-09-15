@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../core/app_colors.dart';
 import '../../core/l10n.dart';
 import '../../state/app_state.dart';
+import '../quiz/quiz_screen.dart';
 import '../../widgets/gradient_card.dart';
 import '../../widgets/progress_ring.dart';
 import '../../widgets/section_header.dart';
@@ -139,8 +140,8 @@ class ProgressScreen extends StatelessWidget {
               const SizedBox(height: 26),
               SectionHeader(
                 title: l.t('Жоспар мен факт', 'План и факт'),
-                subtitle: l.t('Таймермен өлшенген уақыт',
-                    'Время, замеренное таймером'),
+                subtitle: l.t(
+                    'Таймермен өлшенген уақыт', 'Время, замеренное таймером'),
               ),
               SurfaceCard(
                 child: Column(
@@ -205,8 +206,8 @@ class ProgressScreen extends StatelessWidget {
             const SizedBox(height: 26),
             SectionHeader(
               title: l.t('Апталық белсенділік', 'Активность за неделю'),
-              subtitle: l.t('Күніне орындалған тапсырма',
-                  'Выполнено заданий по дням'),
+              subtitle: l.t(
+                  'Күніне орындалған тапсырма', 'Выполнено заданий по дням'),
             ),
             SurfaceCard(
               padding: const EdgeInsets.fromLTRB(8, 20, 14, 8),
@@ -215,8 +216,10 @@ class ProgressScreen extends StatelessWidget {
                 child: BarChart(
                   BarChartData(
                     alignment: BarChartAlignment.spaceAround,
-                    maxY: (stats.weeklyCompleted.reduce((a, b) => a > b ? a : b) + 2)
-                        .toDouble(),
+                    maxY:
+                        (stats.weeklyCompleted.reduce((a, b) => a > b ? a : b) +
+                                2)
+                            .toDouble(),
                     borderData: FlBorderData(show: false),
                     gridData: FlGridData(
                       show: true,
@@ -233,7 +236,8 @@ class ProgressScreen extends StatelessWidget {
                       topTitles: const AxisTitles(),
                       rightTitles: const AxisTitles(),
                       leftTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: true, reservedSize: 28),
+                        sideTitles:
+                            SideTitles(showTitles: true, reservedSize: 28),
                       ),
                       bottomTitles: AxisTitles(
                         sideTitles: SideTitles(
@@ -269,8 +273,8 @@ class ProgressScreen extends StatelessWidget {
             const SizedBox(height: 26),
             SectionHeader(
               title: l.t('Тақырыптар бойынша', 'По темам'),
-              subtitle: l.t('Орындау және тест нәтижесі',
-                  'Выполнение и результаты тестов'),
+              subtitle: l.t('Тест тапсыру үшін тақырыпты бас',
+                  'Нажми на тему, чтобы пройти тест'),
             ),
             if (topics.isEmpty)
               SurfaceCard(
@@ -286,50 +290,63 @@ class ProgressScreen extends StatelessWidget {
               ...topics.take(8).map(
                     (entry) => Padding(
                       padding: const EdgeInsets.only(bottom: 14),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  entry.key,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 13.5,
-                                    fontWeight: FontWeight.w600,
+                      child: InkWell(
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => QuizScreen(topicId: entry.key),
+                          ),
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    entry.key,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              Text(
-                                '${(entry.value * 100).round()}%',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w800,
-                                  color: entry.value >= 0.7
-                                      ? AppColors.success
-                                      : AppColors.warning,
+                                if (entry.value < 0.7) ...[
+                                  const Icon(Icons.quiz_outlined,
+                                      size: 15, color: AppColors.warning),
+                                  const SizedBox(width: 6),
+                                ],
+                                Text(
+                                  '${(entry.value * 100).round()}%',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w800,
+                                    color: entry.value >= 0.7
+                                        ? AppColors.success
+                                        : AppColors.warning,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: LinearProgressIndicator(
-                              value: entry.value,
-                              minHeight: 8,
-                              backgroundColor: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withValues(alpha: 0.08),
-                              color: entry.value >= 0.7
-                                  ? AppColors.success
-                                  : AppColors.warning,
+                              ],
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 6),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: LinearProgressIndicator(
+                                value: entry.value,
+                                minHeight: 8,
+                                backgroundColor: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withValues(alpha: 0.08),
+                                color: entry.value >= 0.7
+                                    ? AppColors.success
+                                    : AppColors.warning,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -366,8 +383,10 @@ class _PlanFactRow extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 13.5,
-              color:
-                  Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.65),
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.65),
             ),
           ),
         ),
