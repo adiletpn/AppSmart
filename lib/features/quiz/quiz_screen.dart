@@ -8,6 +8,7 @@ import '../../state/app_state.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/gradient_card.dart';
 import '../../widgets/pill.dart';
+import '../../widgets/section_header.dart';
 
 class QuizScreen extends StatefulWidget {
   const QuizScreen({super.key, required this.topicId});
@@ -354,38 +355,239 @@ class _Finished extends StatelessWidget {
   final QuizAttempt attempt;
 
   @override
-  Widget build(BuildContext context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final percent = (attempt.percent * 100).round();
+    final color = attempt.percent >= 0.7 ? AppColors.success : AppColors.warning;
+    final minutes = attempt.spent.inMinutes;
+    final wrong = [
+      for (var i = 0; i < attempt.total; i++)
+        if (attempt.answerAt(i) != QuizAttempt.noAnswer &&
+            !attempt.questions[i].isCorrect(attempt.answerAt(i)))
+          i,
+    ];
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+      children: [
+        GradientCard(
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             children: [
+              Text(
+                l.t('Тест аяқталды', 'Тест завершён'),
+                style: const TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 10),
               Text(
                 '${attempt.score} / ${attempt.answeredCount}',
                 style: const TextStyle(
-                  fontSize: 40,
+                  fontSize: 42,
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(height: 10),
-              Pill(
-                text: '${(attempt.percent * 100).round()}%',
-                color: attempt.percent >= 0.7
-                    ? AppColors.success
-                    : AppColors.warning,
-                filled: true,
-              ),
-              const SizedBox(height: 22),
-              FilledButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  minimumSize: const Size(200, 50),
-                ),
-                child: Text(l.t('Дайын', 'Готово')),
+              const SizedBox(height: 14),
+              Text(
+                attempt.topic,
+                style: const TextStyle(fontSize: 13),
+                textAlign: TextAlign.center,
               ),
             ],
           ),
         ),
-      );
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Pill(
+              text: '$percent%',
+              color: color,
+              filled: true,
+            ),
+            const SizedBox(width: 10),
+            Pill(
+              text: minutes < 1
+                  ? l.t('1 минуттан аз', 'меньше минуты')
+                  : l.duration(minutes),
+              color: AppColors.primary,
+              icon: Icons.timer_outlined,
+            ),
+            const SizedBox(width: 10),
+            Pill(
+              text: attempt.fromAi
+                  ? l.t('AI сұрақтары', 'Вопросы от AI')
+                  : l.t('Дайын сұрақтар', 'Готовые вопросы'),
+              color: attempt.fromAi ? AppColors.purple : AppColors.lightMuted,
+              icon: attempt.fromAi ? Icons.auto_awesome : Icons.inventory_2_outlined,
+            ),
+          ],
+        ),
+        if (attempt.answeredCount < attempt.total) ...[
+          const SizedBox(height: 16),
+          SurfaceCard(
+            child: Text(
+              l.t(
+                'Тест толық аяқталмады: ${attempt.total - attempt.answeredCount} '
+                    'сұрақ жауапсыз қалды. Есепке жауап бергендері ғана кірді.',
+                'Тест не закончен: без ответа осталось '
+                    '${attempt.total - attempt.answeredCount}. '
+                    'В прогресс пошли только отвеченные вопросы.',
+              ),
+              style: const TextStyle(fontSize: 13.5, height: 1.4),
+            ),
+          ),
+        ],
+        const SizedBox(height: 22),
+        if (wrong.isEmpty)
+          SurfaceCard(
+            child: Row(
+              children: [
+                const Icon(Icons.emoji_events_outlined,
+                    size: 22, color: AppColors.success),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    l.t(
+                      'Бір де қате жоқ. Бұл тақырыпты келесі жоспарда '
+                          'күрделірек деңгейде көресің.',
+                      'Ни одной ошибки. Эта тема вернётся в план уже сложнее.',
+                    ),
+                    style: const TextStyle(fontSize: 13.5, height: 1.4),
+                  ),
+                ),
+              ],
+            ),
+          )
+        else ...[
+          SectionHeader(
+            title: l.t('Қателерді талдау', 'Разбор ошибок'),
+            subtitle: l.t(
+              'Осы сұрақтарға қайта оралған жөн',
+              'К этим вопросам стоит вернуться',
+            ),
+          ),
+          for (final i in wrong) ...[
+            _Mistake(l: l, attempt: attempt, index: i),
+            const SizedBox(height: 10),
+          ],
+        ],
+        const SizedBox(height: 22),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(),
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            minimumSize: const Size.fromHeight(50),
+          ),
+          child: Text(l.t('Дайын', 'Готово')),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          l.t(
+            'Нәтиже прогреске жазылды.',
+            'Результат записан в прогресс.',
+          ),
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 12.5,
+            color: theme.textTheme.bodySmall?.color,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _Mistake extends StatelessWidget {
+  const _Mistake({
+    required this.l,
+    required this.attempt,
+    required this.index,
+  });
+
+  final L10n l;
+  final QuizAttempt attempt;
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    final question = attempt.questions[index];
+    final chosen = question.options[attempt.answerAt(index)];
+
+    return SurfaceCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            question.prompt,
+            style: const TextStyle(
+              fontSize: 15,
+              height: 1.3,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _Answer(
+            icon: Icons.cancel,
+            color: AppColors.danger,
+            label: l.t('Сенің жауабың', 'Твой ответ'),
+            text: chosen,
+          ),
+          const SizedBox(height: 8),
+          _Answer(
+            icon: Icons.check_circle,
+            color: AppColors.success,
+            label: l.t('Дұрыс жауап', 'Верный ответ'),
+            text: question.correctOption,
+          ),
+          if (question.explanation.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              question.explanation,
+              style: const TextStyle(fontSize: 13, height: 1.4),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _Answer extends StatelessWidget {
+  const _Answer({
+    required this.icon,
+    required this.color,
+    required this.label,
+    required this.text,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String label;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18, color: color),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  color: theme.textTheme.bodySmall?.color,
+                ),
+              ),
+              Text(text, style: const TextStyle(fontSize: 14, height: 1.3)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 }
