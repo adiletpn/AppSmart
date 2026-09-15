@@ -17,6 +17,12 @@ class ReviewItem {
   });
 
   bool get isNew => lastSeen == null;
+
+  /// Мерзімі жеткен: не мүлде қаралмаған, не аралық өтіп кеткен.
+  bool get isDue => isNew || overdueDays >= 0;
+
+  /// Қайталауға дейін қалған күн саны.
+  int get daysLeft => overdueDays >= 0 ? 0 : -overdueDays;
 }
 
 /// Тақырыпты қашан қайталау керегін есептейді. Нәтиже неғұрлым нашар болса,
@@ -41,41 +47,42 @@ class ReviewPlanner {
 
   /// Қайталауға дайын тақырыптар: мерзімі неғұрлым көп өткені алда тұрады,
   /// бұрын мүлде қаралмағаны олардан кейін келеді.
+  /// Бір тақырыптың қайталау күйі: мерзімі жеткен бе, әлде қанша күн қалды.
+  static ReviewItem statusFor({
+    required Topic topic,
+    required Map<String, double> topicScores,
+    required List<StudyTask> history,
+    required DateTime date,
+  }) {
+    final score = _scoreFor(topic, topicScores);
+    final lastSeen = _lastSeen(topic, history, date);
+    final interval = intervalFor(score);
+
+    return ReviewItem(
+      topic: topic,
+      lastSeen: lastSeen,
+      score: score,
+      interval: interval,
+      overdueDays:
+          lastSeen == null ? 0 : date.difference(lastSeen).inDays - interval,
+    );
+  }
+
   static List<ReviewItem> due({
     required List<Topic> pool,
     required Map<String, double> topicScores,
     required List<StudyTask> history,
     required DateTime date,
   }) {
-    final items = <ReviewItem>[];
-
-    for (final topic in pool) {
-      final score = _scoreFor(topic, topicScores);
-      final lastSeen = _lastSeen(topic, history, date);
-      final interval = intervalFor(score);
-
-      if (lastSeen == null) {
-        items.add(ReviewItem(
+    final items = [
+      for (final topic in pool)
+        statusFor(
           topic: topic,
-          lastSeen: null,
-          score: score,
-          interval: interval,
-          overdueDays: 0,
-        ));
-        continue;
-      }
-
-      final passed = date.difference(lastSeen).inDays;
-      if (passed < interval) continue;
-
-      items.add(ReviewItem(
-        topic: topic,
-        lastSeen: lastSeen,
-        score: score,
-        interval: interval,
-        overdueDays: passed - interval,
-      ));
-    }
+          topicScores: topicScores,
+          history: history,
+          date: date,
+        ),
+    ].where((item) => item.isDue).toList();
 
     items.sort((a, b) {
       if (a.isNew != b.isNew) return a.isNew ? 1 : -1;

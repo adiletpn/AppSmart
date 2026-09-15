@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/app_colors.dart';
 import '../../core/l10n.dart';
 import '../../data/ai/topic_catalog.dart';
+import '../../data/ai/review_planner.dart';
 import '../../data/models/app_user.dart';
 import '../../state/app_state.dart';
 import '../../widgets/gradient_card.dart';
@@ -58,6 +59,7 @@ class TopicsScreen extends StatelessWidget {
                   topic: topic,
                   score: scores[topic.kk] ?? scores[topic.ru],
                   beyondLevel: !available.contains(topic.id),
+                  review: app.reviewFor(topic.id),
                 ),
                 const SizedBox(height: 10),
               ],
@@ -101,12 +103,14 @@ class _TopicRow extends StatelessWidget {
     required this.topic,
     required this.score,
     required this.beyondLevel,
+    required this.review,
   });
 
   final L10n l;
   final Topic topic;
   final double? score;
   final bool beyondLevel;
+  final ReviewItem? review;
 
   @override
   Widget build(BuildContext context) {
@@ -151,6 +155,25 @@ class _TopicRow extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (review != null && !review!.isNew && review!.isDue) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColors.warning.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        l.t('қайталау', 'повторить'),
+                        style: const TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.warning,
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(width: 10),
                   Text(
                     value == null

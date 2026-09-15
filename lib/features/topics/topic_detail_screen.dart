@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/app_colors.dart';
 import '../../core/l10n.dart';
 import '../../data/ai/question_bank.dart';
 import '../../data/ai/topic_catalog.dart';
+import '../../data/ai/review_planner.dart';
 import '../../data/ai/topic_theory.dart';
+import '../../state/app_state.dart';
 import '../../widgets/gradient_card.dart';
 import '../../widgets/section_header.dart';
 import '../quiz/quiz_screen.dart';
@@ -27,6 +30,7 @@ class TopicDetailScreen extends StatelessWidget {
     }
 
     final theory = TheoryBank.forTopic(topic.id, isKz: l.isKz);
+    final review = context.watch<AppState>().reviewFor(topic.id);
 
     return Scaffold(
       appBar: AppBar(title: Text(l.t('Тақырып', 'Тема'))),
@@ -67,6 +71,10 @@ class TopicDetailScreen extends StatelessWidget {
                 ],
               ),
             ),
+            if (review != null) ...[
+              const SizedBox(height: 16),
+              _ReviewCard(l: l, review: review),
+            ],
             if (theory != null) ...[
               const SizedBox(height: 22),
               SectionHeader(title: l.t('Негізгі идея', 'Главная мысль')),
@@ -171,4 +179,95 @@ class _Point extends StatelessWidget {
           ),
         ],
       );
+}
+
+
+class _ReviewCard extends StatelessWidget {
+  const _ReviewCard({required this.l, required this.review});
+
+  final L10n l;
+  final ReviewItem review;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final due = review.isDue;
+    final color = due ? AppColors.warning : AppColors.success;
+
+    return SurfaceCard(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            due ? Icons.replay : Icons.event_available_outlined,
+            size: 20,
+            color: color,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _title(),
+                  style: const TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _subtitle(),
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    height: 1.4,
+                    color: theme.textTheme.bodySmall?.color,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _title() {
+    if (review.isNew) {
+      return l.t('Әлі басталмаған', 'Тема ещё не начата');
+    }
+    if (review.isDue) {
+      return l.t('Қайталау уақыты келді', 'Пора повторить');
+    }
+    return l.t(
+      '${review.daysLeft} күннен кейін оралады',
+      'Вернётся через ${review.daysLeft} дн.',
+    );
+  }
+
+  String _subtitle() {
+    final interval = l.t(
+      'Қайталау аралығы — ${review.interval} күн.',
+      'Интервал повторения — ${review.interval} дн.',
+    );
+
+    if (review.isNew) {
+      return l.t(
+        'Жоспарға жақын күндері кіреді. $interval',
+        'Попадёт в план в ближайшие дни. $interval',
+      );
+    }
+
+    final last = l.t(
+      'Соңғы рет ${l.shortDate(review.lastSeen!)}.',
+      'Последний раз ${l.shortDate(review.lastSeen!)}.',
+    );
+    if (review.overdueDays > 0) {
+      return l.t(
+        '$last Мерзімі ${review.overdueDays} күнге кешікті. $interval',
+        '$last Просрочено на ${review.overdueDays} дн. $interval',
+      );
+    }
+    return '$last $interval';
+  }
 }

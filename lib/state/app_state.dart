@@ -9,6 +9,8 @@ import '../core/time_utils.dart';
 import '../data/ai/free_time_engine.dart';
 import '../data/ai/local_mentor_ai.dart';
 import '../data/ai/mentor_ai.dart';
+import '../data/ai/review_planner.dart';
+import '../data/ai/topic_catalog.dart';
 import '../data/ai/question_bank.dart';
 import '../data/local/local_cache.dart';
 import '../data/models/app_notification.dart';
@@ -472,6 +474,18 @@ class AppState extends ChangeNotifier {
     notifyListeners();
     unawaited(_saveCache());
     await progressRepo.saveAll(user.id, _tests);
+  }
+
+  /// Тақырыпты қайталау кестесі: қашан көрілген, қашан қайта оралады.
+  ReviewItem? reviewFor(String topicId) {
+    final topic = TopicCatalog.byName(topicId);
+    if (topic == null) return null;
+    return ReviewPlanner.statusFor(
+      topic: topic,
+      topicScores: stats.topicScores,
+      history: _tasks,
+      date: DateTime.now(),
+    );
   }
 
   Future<void> startQuiz(String topicId) async {
