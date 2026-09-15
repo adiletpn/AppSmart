@@ -124,6 +124,38 @@ class TaskDetailsScreen extends StatelessWidget {
                 style: const TextStyle(fontSize: 14, height: 1.55),
               ),
             ),
+            if (task.hasStatement) ...[
+              const SizedBox(height: 24),
+              SectionHeader(
+                title: l.t('Есеп шарты', 'Условие задачи'),
+                subtitle: l.t('Шешімді кодпен жаз', 'Решение напиши кодом'),
+              ),
+              SurfaceCard(
+                child: Text(
+                  task.statement,
+                  style: const TextStyle(fontSize: 14.5, height: 1.55),
+                ),
+              ),
+              if (task.examples.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                for (var i = 0; i < task.examples.length; i++) ...[
+                  _ExampleCard(
+                    l: l,
+                    number: i + 1,
+                    example: task.examples[i],
+                  ),
+                  const SizedBox(height: 10),
+                ],
+              ],
+            ],
+            if (task.hasHint) ...[
+              const SizedBox(height: 14),
+              _HintCard(l: l, hint: task.hint),
+            ],
+            if (task.hasSolution) ...[
+              const SizedBox(height: 14),
+              _SolutionCard(l: l, solution: task.solution, opened: task.isDone),
+            ],
             const SizedBox(height: 24),
             SectionHeader(title: l.t('Орындау қадамдары', 'Шаги выполнения')),
             ..._steps(l).asMap().entries.map(
@@ -204,4 +236,184 @@ class TaskDetailsScreen extends StatelessWidget {
         l.t('Қателеріңді бөлек жазып ал — AI келесі жоспарға қосады.',
             'Выпиши ошибки — AI учтёт их в следующем плане.'),
       ];
+}
+
+
+class _ExampleCard extends StatelessWidget {
+  const _ExampleCard({
+    required this.l,
+    required this.number,
+    required this.example,
+  });
+
+  final L10n l;
+  final int number;
+  final TaskExample example;
+
+  @override
+  Widget build(BuildContext context) => SurfaceCard(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l.t('$number-мысал', 'Пример $number'),
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+                color: Theme.of(context).textTheme.bodySmall?.color,
+              ),
+            ),
+            const SizedBox(height: 10),
+            _IoRow(label: l.t('Кіріс', 'Ввод'), text: example.input),
+            const SizedBox(height: 8),
+            _IoRow(label: l.t('Шығыс', 'Вывод'), text: example.output),
+          ],
+        ),
+      );
+}
+
+class _IoRow extends StatelessWidget {
+  const _IoRow({required this.label, required this.text});
+
+  final String label;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 52,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context).textTheme.bodySmall?.color,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                fontSize: 13.5,
+                height: 1.4,
+                fontFamily: 'Menlo',
+              ),
+            ),
+          ),
+        ],
+      );
+}
+
+class _HintCard extends StatefulWidget {
+  const _HintCard({required this.l, required this.hint});
+
+  final L10n l;
+  final String hint;
+
+  @override
+  State<_HintCard> createState() => _HintCardState();
+}
+
+class _HintCardState extends State<_HintCard> {
+  bool _open = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = widget.l;
+
+    if (!_open) {
+      return OutlinedButton.icon(
+        onPressed: () => setState(() => _open = true),
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size.fromHeight(46),
+          foregroundColor: AppColors.warning,
+        ),
+        icon: const Icon(Icons.lightbulb_outline, size: 18),
+        label: Text(l.t('Кеңесті ашу', 'Показать подсказку')),
+      );
+    }
+
+    return SurfaceCard(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.lightbulb_outline,
+              size: 20, color: AppColors.warning),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              widget.hint,
+              style: const TextStyle(fontSize: 13.5, height: 1.5),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SolutionCard extends StatelessWidget {
+  const _SolutionCard({
+    required this.l,
+    required this.solution,
+    required this.opened,
+  });
+
+  final L10n l;
+  final String solution;
+  final bool opened;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!opened) {
+      return SurfaceCard(
+        child: Row(
+          children: [
+            Icon(Icons.lock_outline,
+                size: 20, color: Theme.of(context).textTheme.bodySmall?.color),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                l.t(
+                  'Талдау тапсырманы орындаған соң ашылады.',
+                  'Разбор откроется после выполнения задания.',
+                ),
+                style: const TextStyle(fontSize: 13, height: 1.4),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return SurfaceCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.school_outlined,
+                  size: 20, color: AppColors.success),
+              const SizedBox(width: 10),
+              Text(
+                l.t('Шешімнің талдауы', 'Разбор решения'),
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            solution,
+            style: const TextStyle(fontSize: 13.5, height: 1.5),
+          ),
+        ],
+      ),
+    );
+  }
 }
