@@ -92,7 +92,7 @@ class ReviewPlanner {
   }
 
   static double? _scoreFor(Topic topic, Map<String, double> scores) =>
-      scores[topic.kk] ?? scores[topic.ru] ?? scores[topic.id];
+      scores[topic.id] ?? scores[topic.kk] ?? scores[topic.ru];
 
   /// Тақырып соңғы рет қашан кездескені: орындалған тапсырмалар ғана есепке алынады,
   /// өйткені ашылмаған тапсырма қайталау болып саналмайды.

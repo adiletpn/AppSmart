@@ -71,6 +71,11 @@ class TopicCatalog {
   static List<Topic> focusFor(PrepLevel level) =>
       all.where((t) => t.level == level).toList();
 
+  /// Сақталған кілтті оқушыға көрсететін атауға айналдырады. Кілт каталогта
+  /// жоқ болса (ескі дерек), сол күйінде қайтарылады.
+  static String label(String key, bool isKz) =>
+      byName(key)?.name(isKz) ?? key;
+
   static Topic? byName(String name) {
     for (final topic in all) {
       if (topic.kk == name || topic.ru == name || topic.id == name) return topic;

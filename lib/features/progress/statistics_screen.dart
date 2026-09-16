@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/app_colors.dart';
 import '../../core/l10n.dart';
+import '../../data/ai/topic_catalog.dart';
 import '../../state/app_state.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/gradient_card.dart';
@@ -170,7 +171,8 @@ class StatisticsScreen extends StatelessWidget {
                               return Padding(
                                 padding: const EdgeInsets.only(top: 6),
                                 child: Text(
-                                  _shortName(chartTopics[index].key),
+                                  _shortName(TopicCatalog.label(
+                                      chartTopics[index].key, l.isKz)),
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(
                                     fontSize: 9.5,
@@ -224,7 +226,7 @@ class StatisticsScreen extends StatelessWidget {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            entry.key,
+                            TopicCatalog.label(entry.key, l.isKz),
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
@@ -265,7 +267,7 @@ class StatisticsScreen extends StatelessWidget {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            entry.key,
+                            TopicCatalog.label(entry.key, l.isKz),
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,

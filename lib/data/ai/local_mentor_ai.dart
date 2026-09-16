@@ -242,17 +242,13 @@ class LocalMentorAi implements MentorAi {
     final name = topic.name(isKz);
     final count = _taskCount(difficulty);
     return switch (kind) {
-      'theory' =>
-        isKz ? '$name: теорияны талдау' : '$name: разбор теории',
+      'theory' => isKz ? '$name: теорияны талдау' : '$name: разбор теории',
       'test' => isKz ? '$name бойынша мини-тест' : 'Мини-тест по теме «$name»',
-      'contest' => isKz
-          ? '$name: уақытқа қарсы жаттығу'
-          : '$name: тренировка на время',
+      'contest' =>
+        isKz ? '$name: уақытқа қарсы жаттығу' : '$name: тренировка на время',
       'review' =>
         isKz ? '$name: қателермен жұмыс' : '$name: работа над ошибками',
-      _ => isKz
-          ? '$name: $count есеп шығару'
-          : '$name: решить $count задач(и)',
+      _ => isKz ? '$name: $count есеп шығару' : '$name: решить $count задач(и)',
     };
   }
 
@@ -263,20 +259,16 @@ class LocalMentorAi implements MentorAi {
     return switch (kind) {
       'theory' => isKz
           ? '«$name» тақырыбының негізгі идеясын оқып шық, конспект жаз және 1 үлгі есепті қолмен талдап көр.'
-          : 'Изучи основную идею темы «$name», сделай конспект и разбери один пример решения вручную.'
-      ,
+          : 'Изучи основную идею темы «$name», сделай конспект и разбери один пример решения вручную.',
       'test' => isKz
           ? '«$name» бойынша қысқа тест тапсыр. Қателескен сұрақтарды бөлек жазып ал.'
-          : 'Пройди короткий тест по теме «$name». Ошибочные вопросы выпиши отдельно.'
-      ,
+          : 'Пройди короткий тест по теме «$name». Ошибочные вопросы выпиши отдельно.',
       'contest' => isKz
           ? 'Таймер қой және «$name» бойынша есептерді олимпиада форматында шығар. Уақытты бақыла.'
-          : 'Поставь таймер и реши задачи по теме «$name» в олимпиадном формате. Следи за временем.'
-      ,
+          : 'Поставь таймер и реши задачи по теме «$name» в олимпиадном формате. Следи за временем.',
       'review' => isKz
           ? 'Соңғы қателеріңді қайта қарап, «$name» бойынша дұрыс шешімді өз бетіңше қайта жаз.'
-          : 'Пересмотри последние ошибки и заново напиши правильное решение по теме «$name».'
-      ,
+          : 'Пересмотри последние ошибки и заново напиши правильное решение по теме «$name».',
       _ => isKz
           ? '«$name» тақырыбы бойынша $count есеп шығар. Әр есептің шешімін кодта және тестілеп көр.'
           : 'Реши $count задач(и) по теме «$name». Каждое решение напиши кодом и протестируй.'
@@ -308,7 +300,8 @@ class LocalMentorAi implements MentorAi {
     final queue = [...tasks];
     for (final window in windows) {
       var cursor = window.start;
-      while (queue.isNotEmpty && cursor + queue.first.durationMinutes <= window.end) {
+      while (queue.isNotEmpty &&
+          cursor + queue.first.durationMinutes <= window.end) {
         final task = queue.removeAt(0);
         final end = cursor + task.durationMinutes;
         items.add(ScheduleItem(
@@ -388,7 +381,7 @@ class LocalMentorAi implements MentorAi {
       );
     }
     if (weak.isNotEmpty) {
-      final topic = weak.first.key;
+      final topic = TopicCatalog.label(weak.first.key, isKz);
       return l.t(
         '$name, «$topic» тақырыбы әлсіз тұр. Бүгінгі ${l.duration(minutes)} дайындықтың алғашқы бөлігін осы тақырыпқа арна.',
         '$name, тема «$topic» пока слабое место. Первую часть сегодняшних ${l.duration(minutes)} подготовки посвяти именно ей.',
@@ -451,7 +444,7 @@ class LocalMentorAi implements MentorAi {
           'Слабых тем пока не видно. Пройди несколько тестов — анализ станет точнее.',
         );
       }
-      final list = weak.map((e) => e.key).join(', ');
+      final list = weak.map((e) => TopicCatalog.label(e.key, isKz)).join(', ');
       return l.t(
         'Күшейту қажет тақырыптар: $list. Әрқайсысына аптасына кемінде 2 сессия бөл.',
         'Стоит подтянуть темы: $list. Выдели на каждую минимум 2 занятия в неделю.',

@@ -768,6 +768,9 @@ class AppState extends ChangeNotifier {
     await notificationsRepo.saveAll(user.id, _notifications);
   }
 
+  static String _topicKey(String name) =>
+      TopicCatalog.byName(name)?.id ?? name;
+
   ProgressStats get stats {
     final done = _tasks.where((t) => t.isDone).toList();
     final studyMinutes =
@@ -790,13 +793,16 @@ class AppState extends ChangeNotifier {
         ? 0.0
         : _tests.map((t) => t.percent).reduce((a, b) => a + b) / _tests.length;
 
+    // Тақырып аты екі тілде сақталуы мүмкін, сондықтан кілт ретінде
+    // каталогтағы id алынады: тіл ауысқанда бір тақырып екіге бөлінбейді.
     final scores = <String, List<double>>{};
     for (final task in _tasks) {
       if (task.topic.isEmpty) continue;
-      scores.putIfAbsent(task.topic, () => []).add(task.isDone ? 1 : 0);
+      scores.putIfAbsent(_topicKey(task.topic), () => []).add(task.isDone ? 1 : 0);
     }
     for (final test in _tests) {
-      scores.putIfAbsent(test.topic, () => []).add(test.percent);
+      if (test.topic.isEmpty) continue;
+      scores.putIfAbsent(_topicKey(test.topic), () => []).add(test.percent);
     }
     final topicScores = scores.map((key, value) =>
         MapEntry(key, value.reduce((a, b) => a + b) / value.length));

@@ -66,11 +66,8 @@ class ProgressReport {
     }
 
     final pool = TopicCatalog.forLevel(user.level);
-    final touched = pool
-        .where((t) =>
-            stats.topicScores.containsKey(t.kk) ||
-            stats.topicScores.containsKey(t.ru))
-        .length;
+    final touched =
+        pool.where((t) => stats.topicScores.containsKey(t.id)).length;
     lines.add(
       '${l.t('Қамтылған тақырып', 'Охвачено тем')}: $touched / ${pool.length}',
     );
@@ -80,7 +77,8 @@ class ProgressReport {
     if (strong.isNotEmpty) {
       lines.add(l.t('МЫҚТЫ ТАҚЫРЫПТАР', 'СИЛЬНЫЕ ТЕМЫ'));
       for (final entry in strong) {
-        lines.add('  ${entry.key} — ${(entry.value * 100).round()}%');
+        lines.add('  ${TopicCatalog.label(entry.key, l.isKz)} — '
+            '${(entry.value * 100).round()}%');
       }
       lines.add('');
     }
@@ -89,7 +87,8 @@ class ProgressReport {
     if (weak.isNotEmpty) {
       lines.add(l.t('КҮШЕЙТУ ҚАЖЕТ', 'ТРЕБУЕТ ВНИМАНИЯ'));
       for (final entry in weak) {
-        lines.add('  ${entry.key} — ${(entry.value * 100).round()}%');
+        lines.add('  ${TopicCatalog.label(entry.key, l.isKz)} — '
+            '${(entry.value * 100).round()}%');
       }
       lines.add('');
     }
@@ -130,8 +129,8 @@ class ProgressReport {
     final done = tasks.where((t) => t.isDone).toList()
       ..sort((a, b) => b.date.compareTo(a.date));
     if (done.isNotEmpty) {
-      lines.add(l.t('СОҢҒЫ ОРЫНДАЛҒАН ТАПСЫРМАЛАР',
-          'ПОСЛЕДНИЕ ВЫПОЛНЕННЫЕ ЗАДАНИЯ'));
+      lines.add(
+          l.t('СОҢҒЫ ОРЫНДАЛҒАН ТАПСЫРМАЛАР', 'ПОСЛЕДНИЕ ВЫПОЛНЕННЫЕ ЗАДАНИЯ'));
       for (final task in done.take(10)) {
         final spent =
             task.spentMinutes > 0 ? ' · ${l.duration(task.spentMinutes)}' : '';

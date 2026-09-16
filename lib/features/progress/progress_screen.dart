@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/app_colors.dart';
 import '../../core/l10n.dart';
+import '../../data/ai/topic_catalog.dart';
 import '../../state/app_state.dart';
 import '../quiz/quiz_screen.dart';
 import '../topics/topics_screen.dart';
@@ -309,7 +310,7 @@ class ProgressScreen extends StatelessWidget {
                               children: [
                                 Expanded(
                                   child: Text(
-                                    entry.key,
+                                    TopicCatalog.label(entry.key, l.isKz),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(

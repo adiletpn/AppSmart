@@ -57,7 +57,7 @@ class TopicsScreen extends StatelessWidget {
                 _TopicRow(
                   l: l,
                   topic: topic,
-                  score: scores[topic.kk] ?? scores[topic.ru],
+                  score: scores[topic.id],
                   beyondLevel: !available.contains(topic.id),
                   review: app.reviewFor(topic.id),
                 ),
@@ -83,9 +83,7 @@ class TopicsScreen extends StatelessWidget {
     Map<String, double> scores,
   ) {
     final topics = TopicCatalog.focusFor(level);
-    final studied = topics
-        .where((t) => scores.containsKey(t.kk) || scores.containsKey(t.ru))
-        .length;
+    final studied = topics.where((t) => scores.containsKey(t.id)).length;
 
     if (!available.contains(topics.first.id)) {
       return l.t('Деңгейіңнен жоғары', 'Выше твоего уровня');

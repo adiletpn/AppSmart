@@ -114,15 +114,15 @@ class GeminiMentorAi implements MentorAi {
         Pace.slow =>
           'Оқушы тапсырмаларға жоспардан ${((pace.ratio - 1) * 100).round()}% көп '
               'уақыт жұмсайды. Тапсырмаларды жеңілдет және қысқарт.',
-        Pace.fast =>
-          'Оқушы тапсырмаларды жоспардан жылдам бітіреді '
-              '(жоспардың ${(pace.ratio * 100).round()}%-ы). '
-              'Күрделілікті сәл көтеруге болады.',
+        Pace.fast => 'Оқушы тапсырмаларды жоспардан жылдам бітіреді '
+            '(жоспардың ${(pace.ratio * 100).round()}%-ы). '
+            'Күрделілікті сәл көтеруге болады.',
         _ => '',
       };
 
   String _profile(AppUser user, ProgressStats stats, bool isKz) {
-    final weak = stats.weakTopics.map((e) => e.key).join(', ');
+    final weak =
+        stats.weakTopics.map((e) => TopicCatalog.label(e.key, isKz)).join(', ');
     final language = isKz ? 'қазақ тілінде' : 'на русском языке';
     return [
       'Оқушы: ${user.name}, ${user.grade} сынып.',
@@ -171,7 +171,7 @@ class GeminiMentorAi implements MentorAi {
 
     final answer = await _ask(
       'Сен информатика олимпиадасына дайындайтын ментор боласың. '
-      'Тек JSON массивін қайтар, түсіндірмесіз, markdown белгісіз.',
+          'Тек JSON массивін қайтар, түсіндірмесіз, markdown белгісіз.',
       '''
 ${_profile(user, stats, isKz)}
 ${_paceHint(pace)}
@@ -239,7 +239,7 @@ ${_paceHint(pace)}
     final name = topic.name(isKz);
     final answer = await _ask(
       'Сен информатика олимпиадасына дайындайтын ментор боласың. '
-      'Тек JSON массивін қайтар, түсіндірмесіз, markdown белгісіз.',
+          'Тек JSON массивін қайтар, түсіндірмесіз, markdown белгісіз.',
       """
 Тақырып: $name. Оқушы деңгейі: ${topic.level.name}.
 Жауап тілі: ${isKz ? 'қазақ тілінде' : 'на русском языке'}.
@@ -281,7 +281,7 @@ explanation — бір сөйлемдік түсіндірме.
     final answer = await _ask(
       'Сен оқушыны қолдайтын ментор боласың. Тек 2 сөйлем жаз.',
       '${_profile(user, stats, isKz)}\nБүгінгі тапсырмалар: ${titles.isEmpty ? 'жоқ' : titles}.\n'
-      'Оқушыға бүгінге қысқа әрі нақты кеңес бер.',
+          'Оқушыға бүгінге қысқа әрі нақты кеңес бер.',
       maxTokens: 400,
     );
     if (answer != null) return answer;
@@ -302,18 +302,19 @@ explanation — бір сөйлемдік түсіндірме.
     required String message,
     required bool isKz,
   }) async {
-    final context = history
-        .reversed
+    final context = history.reversed
         .take(6)
         .toList()
         .reversed
-        .map((m) => '${m.role == ChatRole.user ? 'Оқушы' : 'Ментор'}: ${m.text}')
+        .map(
+            (m) => '${m.role == ChatRole.user ? 'Оқушы' : 'Ментор'}: ${m.text}')
         .join('\n');
-    final pending = today.where((t) => !t.isDone).map((t) => t.title).join('; ');
+    final pending =
+        today.where((t) => !t.isDone).map((t) => t.title).join('; ');
 
     final answer = await _ask(
       'Сен информатика олимпиадасына дайындайтын жеке ментор боласың. '
-      'Қысқа, нақты және қадаммен түсіндір. Код керек болса, Python қолдан.',
+          'Қысқа, нақты және қадаммен түсіндір. Код керек болса, Python қолдан.',
       '''
 ${_profile(user, stats, isKz)}
 Бүгін орындалмаған тапсырмалар: ${pending.isEmpty ? 'жоқ' : pending}.
