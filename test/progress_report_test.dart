@@ -167,7 +167,7 @@ void main() {
   test('в отчёте видно, сколько тем охвачено', () {
     final report = ProgressReport.build(
       user: buildUser(),
-      stats: const ProgressStats(topicScores: {'Циклы': 0.4, 'Рекурсия': 0.9}),
+      stats: const ProgressStats(topicScores: {'loops': 0.4, 'recursion': 0.9}),
       tasks: const [],
       tests: const [],
       l: l,
@@ -194,7 +194,7 @@ void main() {
 
     final report = ProgressReport.build(
       user: buildUser(),
-      stats: const ProgressStats(topicScores: {'Циклы': 0.3}),
+      stats: const ProgressStats(topicScores: {'loops': 0.3}),
       tasks: [old],
       tests: const [],
       l: l,
@@ -211,7 +211,7 @@ void main() {
 
     final report = ProgressReport.build(
       user: buildUser(),
-      stats: const ProgressStats(topicScores: {'Циклы': 0.95}),
+      stats: const ProgressStats(topicScores: {'loops': 0.95}),
       tasks: [recent],
       tests: const [],
       l: l,
