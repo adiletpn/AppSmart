@@ -14,6 +14,9 @@ class AuthRepository {
 
   FirebaseAuth get _auth => FirebaseAuth.instance;
 
+  /// Firebase аккаунтты құрылғыда сақтайды, сондықтан id желісіз де қолжетімді.
+  String? get currentUserId => _auth.currentUser?.uid;
+
   Future<AppUser?> currentUser() async {
     final account = _auth.currentUser;
     if (account == null) return null;

@@ -125,7 +125,16 @@ class AppState extends ChangeNotifier {
 
   Future<void> bootstrap() async {
     _watchPendingWrites();
-    _user = await auth.currentUser();
+    try {
+      _user = await auth.currentUser();
+    } on Exception {
+      // Профильді серверден оқу мүмкін болмады. Аккаунт құрылғыда сақталған,
+      // сондықтан оқушыны кіру бетіне қуып шықпай, кэштегі профильмен жұмысты
+      // жалғастырамыз.
+      _offline = true;
+      final id = auth.currentUserId;
+      _user = id == null ? null : cache.readUser(id);
+    }
     if (_user != null) await _loadUserData();
     notifyListeners();
   }
@@ -134,6 +143,7 @@ class AppState extends ChangeNotifier {
   /// Сұраныстар қатар жіберіледі — бұрын бесеуі кезекпен күтілетін.
   Future<void> _loadUserData() async {
     final id = _user!.id;
+    unawaited(_cacheUser());
 
     final cached = cache.read(id);
     if (!cached.isEmpty) {
@@ -263,9 +273,15 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> _cacheUser() async {
+    final user = _user;
+    if (user != null) await cache.writeUser(user);
+  }
+
   Future<void> saveProfile(AppUser updated) async {
     _user = await auth.save(updated);
     notifyListeners();
+    await _cacheUser();
   }
 
   Future<void> completeProfile(AppUser updated) async {
@@ -356,6 +372,9 @@ class AppState extends ChangeNotifier {
           ),
         );
       }
+    } on Exception {
+      // Жоспар құру сәтсіз аяқталды: экранды құлатпай, бар жоспарды қалдырамыз.
+      _offline = true;
     } finally {
       _setBusy(false);
     }

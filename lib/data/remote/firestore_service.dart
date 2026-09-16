@@ -42,13 +42,20 @@ class FirestoreService {
     List<Map<String, dynamic>> items,
   ) async {
     final ref = collection(userId, name);
-    final existing = await ref.get();
-    final ids = items.map((item) => item['id'] as String).toSet();
     final batch = db.batch();
 
-    for (final doc in existing.docs) {
-      if (!ids.contains(doc.id)) batch.delete(doc.reference);
+    // Бар жазбаларды оқу сәтсіз болса да, жаңа деректі жазып қалу керек:
+    // әйтпесе оқушының офлайнда істеген жұмысы кезекке де түспей жоғалады.
+    try {
+      final existing = await ref.get();
+      final ids = items.map((item) => item['id'] as String).toSet();
+      for (final doc in existing.docs) {
+        if (!ids.contains(doc.id)) batch.delete(doc.reference);
+      }
+    } on Exception {
+      // Артық жазбаларды тазалау келесі сәтті сақтауға қалдырылады.
     }
+
     for (final item in items) {
       batch.set(ref.doc(item['id'] as String), item);
     }
@@ -56,12 +63,16 @@ class FirestoreService {
   }
 
   static Future<void> deleteAll(String userId, String name) async {
-    final snapshot = await collection(userId, name).get();
-    final batch = db.batch();
-    for (final doc in snapshot.docs) {
-      batch.delete(doc.reference);
+    try {
+      final snapshot = await collection(userId, name).get();
+      final batch = db.batch();
+      for (final doc in snapshot.docs) {
+        batch.delete(doc.reference);
+      }
+      _commit(batch);
+    } on Exception {
+      // Байланыс жоқта тазалау мүмкін емес — келесі әрекетте қайталанады.
     }
-    _commit(batch);
   }
 
   /// Firestore жазуды жергілікті кэшке бірден қолданады, ал commit() тек

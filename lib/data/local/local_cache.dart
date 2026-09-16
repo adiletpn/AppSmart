@@ -1,4 +1,5 @@
 import '../models/app_notification.dart';
+import '../models/app_user.dart';
 import '../models/chat_message.dart';
 import '../models/schedule_item.dart';
 import '../models/study_task.dart';
@@ -36,6 +37,18 @@ class LocalCache {
   final LocalStore _store;
 
   static String _key(String name, String userId) => 'cache_${name}_$userId';
+
+  AppUser? readUser(String userId) {
+    try {
+      final data = _store.readMap(_key('user', userId));
+      return data == null ? null : AppUser.fromJson(data);
+    } on Exception {
+      return null;
+    }
+  }
+
+  Future<void> writeUser(AppUser user) =>
+      _store.writeMap(_key('user', user.id), user.toJson());
 
   CachedData read(String userId) {
     try {
