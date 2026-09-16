@@ -563,11 +563,9 @@ class AppState extends ChangeNotifier {
     notifyListeners();
 
     if (finished.answeredCount == 0) return;
-    await addTestResult(
-      finished.topic,
-      finished.score,
-      finished.answeredCount,
-    );
+    for (final entry in finished.scoreByTopic.entries) {
+      await addTestResult(entry.key, entry.value.score, entry.value.total);
+    }
 
     final percent = (finished.percent * 100).round();
     await pushNotification(

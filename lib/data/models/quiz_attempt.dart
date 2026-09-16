@@ -69,6 +69,23 @@ class QuizAttempt {
 
   Duration get spent => (finishedAt ?? startedAt).difference(startedAt);
 
+  /// Сұрақтар бірнеше тақырыптан құралуы мүмкін (өз тақырыбында сұрақ
+  /// жетпесе, көршілерінен толықтырылады). Нәтиже сол тақырыптардың әрқайсысына
+  /// бөлек жазылуы үшін осылай топтастырылады.
+  Map<String, ({int score, int total})> get scoreByTopic {
+    final result = <String, ({int score, int total})>{};
+    for (var i = 0; i < total; i++) {
+      if (answers[i] == noAnswer) continue;
+      final key = questions[i].topic.isEmpty ? topic : questions[i].topic;
+      final current = result[key] ?? (score: 0, total: 0);
+      result[key] = (
+        score: current.score + (questions[i].isCorrect(answers[i]) ? 1 : 0),
+        total: current.total + 1,
+      );
+    }
+    return result;
+  }
+
   List<QuizQuestion> get mistakes => [
         for (var i = 0; i < total; i++)
           if (answers[i] != noAnswer && !questions[i].isCorrect(answers[i]))
